@@ -6,8 +6,11 @@ import { EventCard } from './components/EventCard';
 import { EventModal } from './components/EventModal';
 import { MyTicketsDrawer } from './components/MyTicketsDrawer';
 import type { PurchasedTicket } from './components/MyTicketsDrawer';
+import { FilterBar } from './components/FilterBar';
+import type { FilterState } from './components/FilterBar';
 import { FEATURED_EVENT, EVENTS_BY_CATEGORY, EVENT_CATEGORIES } from './data/events';
 import type { EventItem } from './data/events';
+import type { SelectedSeat } from './components/SeatPicker';
 import { Sparkles, Film, Ticket, ShieldCheck, Zap } from 'lucide-react';
 
 export function App() {
@@ -15,18 +18,28 @@ export function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedEventModal, setSelectedEventModal] = useState<EventItem | null>(null);
   const [isTicketsDrawerOpen, setIsTicketsDrawerOpen] = useState<boolean>(false);
+
+  // Filter State
+  const [filters, setFilters] = useState<FilterState>({
+    city: 'All Locations',
+    dateRange: 'all',
+    maxPrice: 600,
+    sortBy: 'match',
+  });
+
   const [purchasedTickets, setPurchasedTickets] = useState<PurchasedTicket[]>([
     {
       id: 'TK-882194',
       event: EVENTS_BY_CATEGORY['Trending Now'][0],
-      tier: 'General Admission',
+      tier: 'VIP Front Row (VIP-1-2)',
       quantity: 2,
       totalPrice: 190,
       purchaseDate: '2026-08-04',
+      customerName: 'Alex Morgan',
     },
   ]);
 
-  // Handle Search Filtering
+  // Aggregate all events
   const allEventsList = useMemo(() => {
     const list: EventItem[] = [FEATURED_EVENT];
     Object.values(EVENTS_BY_CATEGORY).forEach((arr) => {
@@ -39,9 +52,11 @@ export function App() {
     return list;
   }, []);
 
+  // Multi-criteria filter & sort pipeline
   const filteredEvents = useMemo(() => {
-    let result = allEventsList;
+    let result = [...allEventsList];
 
+    // Category filter
     if (selectedCategory !== 'all') {
       const catObj = EVENT_CATEGORIES.find((c) => c.id === selectedCategory);
       if (catObj) {
@@ -51,6 +66,7 @@ export function App() {
       }
     }
 
+    // Search query filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -63,14 +79,52 @@ export function App() {
       );
     }
 
+    // Location / City filter
+    if (filters.city !== 'All Locations') {
+      result = result.filter((e) => e.location.includes(filters.city));
+    }
+
+    // Date range filter
+    if (filters.dateRange === 'tonight') {
+      result = result.filter((e) => e.date.toUpperCase().includes('TONIGHT') || e.isLive);
+    } else if (filters.dateRange === 'weekend') {
+      result = result.filter((e) => e.date.includes('SAT') || e.date.includes('SUN'));
+    }
+
+    // Max Price filter
+    result = result.filter((e) => {
+      const priceNum = parseInt(e.price.replace(/[^0-9]/g, '')) || 50;
+      return priceNum <= filters.maxPrice;
+    });
+
+    // Sorting Order
+    result.sort((a, b) => {
+      if (filters.sortBy === 'match') {
+        return b.matchPercentage - a.matchPercentage;
+      }
+      if (filters.sortBy === 'price-asc') {
+        const pA = parseInt(a.price.replace(/[^0-9]/g, '')) || 0;
+        const pB = parseInt(b.price.replace(/[^0-9]/g, '')) || 0;
+        return pA - pB;
+      }
+      if (filters.sortBy === 'price-desc') {
+        const pA = parseInt(a.price.replace(/[^0-9]/g, '')) || 0;
+        const pB = parseInt(b.price.replace(/[^0-9]/g, '')) || 0;
+        return pB - pA;
+      }
+      return 0;
+    });
+
     return result;
-  }, [allEventsList, selectedCategory, searchQuery]);
+  }, [allEventsList, selectedCategory, searchQuery, filters]);
 
   const handleConfirmPurchase = (ticketInfo: {
     event: EventItem;
     tier: string;
     quantity: number;
     totalPrice: number;
+    seats: SelectedSeat[];
+    customerName: string;
   }) => {
     const newTicket: PurchasedTicket = {
       id: `TK-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -79,6 +133,8 @@ export function App() {
       quantity: ticketInfo.quantity,
       totalPrice: ticketInfo.totalPrice,
       purchaseDate: new Date().toISOString().split('T')[0],
+      seats: ticketInfo.seats,
+      customerName: ticketInfo.customerName,
     };
     setPurchasedTickets((prev) => [newTicket, ...prev]);
   };
@@ -86,6 +142,13 @@ export function App() {
   const handleRemoveTicket = (id: string) => {
     setPurchasedTickets((prev) => prev.filter((t) => t.id !== id));
   };
+
+  const isFiltered =
+    searchQuery.trim() !== '' ||
+    selectedCategory !== 'all' ||
+    filters.city !== 'All Locations' ||
+    filters.dateRange !== 'all' ||
+    filters.maxPrice < 600;
 
   return (
     <div className="min-h-screen bg-netflix-black text-netflix-white font-sans selection:bg-netflix-red selection:text-white flex flex-col justify-between">
@@ -102,38 +165,58 @@ export function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 pb-16">
-        {/* If Search Query is Active or Filter Applied */}
-        {searchQuery.trim() || selectedCategory !== 'all' ? (
+        {/* If Active Filter or Search */}
+        {isFiltered ? (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 space-y-6">
+            {/* Filter Controls Bar */}
+            <FilterBar
+              filters={filters}
+              onFilterChange={(updated) => setFilters(updated)}
+              onReset={() => {
+                setFilters({
+                  city: 'All Locations',
+                  dateRange: 'all',
+                  maxPrice: 600,
+                  sortBy: 'match',
+                });
+                setSelectedCategory('all');
+                setSearchQuery('');
+              }}
+            />
+
             <div className="flex items-center justify-between border-b border-netflix-light-grey/10 pb-4">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-netflix-white tracking-tight">
-                  {searchQuery ? `Search Results for "${searchQuery}"` : `Category: ${EVENT_CATEGORIES.find((c) => c.id === selectedCategory)?.name}`}
+                  {searchQuery ? `Search Results for "${searchQuery}"` : `Explore Live Events`}
                 </h1>
                 <p className="text-xs text-netflix-light-grey mt-1">
-                  Found {filteredEvents.length} live events matching your criteria
+                  Showing {filteredEvents.length} events tailored to your filter selection
                 </p>
               </div>
 
-              {(searchQuery || selectedCategory !== 'all') && (
-                <button
-                  onClick={() => {
-                    setSelectedCategory('all');
-                    setSearchQuery('');
-                  }}
-                  className="bg-netflix-dark-grey hover:bg-netflix-red text-netflix-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors"
-                >
-                  Clear Filters
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setSearchQuery('');
+                  setFilters({
+                    city: 'All Locations',
+                    dateRange: 'all',
+                    maxPrice: 600,
+                    sortBy: 'match',
+                  });
+                }}
+                className="bg-netflix-dark-grey hover:bg-netflix-red text-netflix-white text-xs font-semibold px-3.5 py-2 rounded-md transition-colors"
+              >
+                Reset All Filters
+              </button>
             </div>
 
             {filteredEvents.length === 0 ? (
               <div className="text-center py-20 bg-netflix-dark-grey rounded-md space-y-3">
                 <Film className="w-12 h-12 text-netflix-light-grey/40 mx-auto" />
-                <h2 className="text-lg font-bold text-netflix-white">No Events Found</h2>
+                <h2 className="text-lg font-bold text-netflix-white">No Matching Events Found</h2>
                 <p className="text-xs text-netflix-light-grey">
-                  Try searching for different keywords like "Concert", "Hans Zimmer", "Comedy", or "Symphony".
+                  Try adjusting your price range slider or clearing city filters.
                 </p>
               </div>
             ) : (
@@ -151,7 +234,7 @@ export function App() {
             )}
           </div>
         ) : (
-          /* Default Netflix Aesthetic Home Page */
+          /* Default Netflix Aesthetic Home Dashboard */
           <>
             {/* Featured Billboard Hero */}
             <HeroBanner
@@ -160,8 +243,24 @@ export function App() {
               onMoreInfo={(e) => setSelectedEventModal(e)}
             />
 
+            {/* Filter Bar in Container */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 relative z-30">
+              <FilterBar
+                filters={filters}
+                onFilterChange={(updated) => setFilters(updated)}
+                onReset={() => {
+                  setFilters({
+                    city: 'All Locations',
+                    dateRange: 'all',
+                    maxPrice: 600,
+                    sortBy: 'match',
+                  });
+                }}
+              />
+            </div>
+
             {/* Horizontal Netflix Rows Container */}
-            <div className="relative z-30 -mt-10 sm:-mt-16 space-y-4">
+            <div className="relative z-30 mt-4 space-y-4">
               {Object.entries(EVENTS_BY_CATEGORY).map(([categoryTitle, eventsList]) => (
                 <EventRow
                   key={categoryTitle}
@@ -173,7 +272,7 @@ export function App() {
               ))}
             </div>
 
-            {/* Premium Features Highlight Bar (#141414 surface) */}
+            {/* Premium Highlights Surface (#141414 surface) */}
             <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
               <div className="bg-netflix-dark-grey rounded-md p-6 sm:p-10 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
                 <div className="flex items-start space-x-4">
@@ -229,7 +328,7 @@ export function App() {
                 TICK<span className="text-netflix-white">IT</span>
               </span>
               <span className="text-xs text-netflix-light-grey ml-2">
-                • Cinematic Event Ticketing System
+                • Cinematic Event Ticketing Platform
               </span>
             </div>
 
@@ -248,7 +347,7 @@ export function App() {
         </div>
       </footer>
 
-      {/* Ticket Purchase Modal */}
+      {/* Ticket Purchase & Seat Selection Wizard Modal */}
       <EventModal
         event={selectedEventModal}
         onClose={() => setSelectedEventModal(null)}
