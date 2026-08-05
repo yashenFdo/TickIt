@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { X, Calendar, MapPin, Ticket, ShieldCheck, CheckCircle2, Sparkles, CreditCard, Lock, Smartphone, ChevronRight, ChevronLeft, Star, ThumbsUp, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Calendar, MapPin, Ticket, ShieldCheck, CheckCircle2, Sparkles, Star, ThumbsUp, MessageSquare, Zap } from 'lucide-react';
 import type { EventItem } from '../data/events';
 import { SeatPicker } from './SeatPicker';
 import type { SelectedSeat } from './SeatPicker';
+import type { UserProfile } from './AuthModal';
 
 interface EventModalProps {
   event: EventItem | null;
+  currentUser: UserProfile | null;
+  onOpenAuthModal: () => void;
   onClose: () => void;
   onConfirmPurchase: (ticketInfo: {
     event: EventItem;
@@ -17,7 +20,13 @@ interface EventModalProps {
   }) => void;
 }
 
-export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfirmPurchase }) => {
+export const EventModal: React.FC<EventModalProps> = ({
+  event,
+  currentUser,
+  onOpenAuthModal,
+  onClose,
+  onConfirmPurchase,
+}) => {
   if (!event) return null;
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -25,13 +34,16 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
   const [selectedSeats, setSelectedSeats] = useState<SelectedSeat[]>([]);
   const [selectedTier, setSelectedTier] = useState<'standard' | 'vip' | 'backstage'>('standard');
   const [quantity, setQuantity] = useState(1);
-  const [bookingMode, setBookingMode] = useState<'seats' | 'tier'>('seats');
+  const [bookingMode, setBookingMode] = useState<'express' | 'seats' | 'tier'>('express');
 
   // Customer Form State
   const [customerName, setCustomerName] = useState('Alex Morgan');
-  const [customerEmail, setCustomerEmail] = useState('alex.morgan@netflix-tickit.com');
-  const [customerPhone, setCustomerPhone] = useState('+1 (555) 382-9102');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'applepay' | 'googlepay' | 'crypto'>('card');
+
+  useEffect(() => {
+    if (currentUser) {
+      setCustomerName(currentUser.name);
+    }
+  }, [currentUser]);
 
   // Reviews State
   const [reviewsList, setReviewsList] = useState([
@@ -62,7 +74,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
     setReviewsList([
       {
         id: `rev-${Date.now()}`,
-        author: customerName || 'Verified Attendee',
+        author: currentUser ? currentUser.name : customerName || 'Verified Attendee',
         rating: 5,
         date: 'Just now',
         comment: newComment,
@@ -111,14 +123,14 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
       ? selectedSeats.map((s) => `${s.section} (${s.id})`).join(', ')
       : currentTierObj.name;
 
-  const handleCompleteOrder = () => {
+  const handleExpressCheckout = () => {
     onConfirmPurchase({
       event,
       tier: tierName,
       quantity: finalQuantity,
       totalPrice,
       seats: selectedSeats,
-      customerName,
+      customerName: currentUser ? currentUser.name : customerName,
     });
     setStep(4);
   };
@@ -136,7 +148,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header Tab Switcher (Ticket Booking vs Fan Reviews) */}
+        {/* Header Tab Switcher */}
         <div className="bg-netflix-black/90 px-6 py-3 border-b border-white/10 flex items-center justify-between text-xs font-semibold">
           <div className="flex items-center space-x-4">
             <button
@@ -148,7 +160,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
               }`}
             >
               <Ticket className="w-4 h-4 text-netflix-red" />
-              <span className="uppercase text-[11px]">Ticket Booking Wizard</span>
+              <span className="uppercase text-[11px]">Express Ticket Booking</span>
             </button>
 
             <button
@@ -163,16 +175,6 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
               <span className="uppercase text-[11px]">Fan Reviews ({reviewsList.length})</span>
             </button>
           </div>
-
-          {activeTab === 'booking' && step < 4 && (
-            <div className="hidden sm:flex items-center space-x-1 text-[11px] text-netflix-light-grey">
-              <span className={step >= 1 ? 'text-netflix-red font-bold' : ''}>Seats</span>
-              <ChevronRight className="w-3 h-3 text-netflix-light-grey" />
-              <span className={step >= 2 ? 'text-netflix-red font-bold' : ''}>Attendee</span>
-              <ChevronRight className="w-3 h-3 text-netflix-light-grey" />
-              <span className={step >= 3 ? 'text-netflix-red font-bold' : ''}>Payment</span>
-            </div>
-          )}
         </div>
 
         {/* Fan Reviews Tab Content */}
@@ -205,7 +207,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
                 />
                 <button
                   type="submit"
-                  className="bg-netflix-red hover:bg-netflix-red/90 text-white font-bold text-xs px-4 rounded-md transition-colors"
+                  className="bg-netflix-red hover:bg-netflix-red/90 text-white font-bold text-xs px-4 rounded-md transition-colors cursor-pointer"
                 >
                   Post
                 </button>
@@ -254,11 +256,11 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl sm:text-3xl font-black text-netflix-white">
-                Ticket Order Confirmed!
+                Ticket Issued Successfully!
               </h2>
               <p className="text-sm text-netflix-light-grey max-w-md mx-auto">
-                Thank you, <span className="text-netflix-white font-bold">{customerName}</span>. Your digital entry pass for{' '}
-                <span className="text-netflix-red font-bold">{event.title}</span> has been issued.
+                Thank you, <span className="text-netflix-white font-bold">{currentUser ? currentUser.name : customerName}</span>. Your digital mobile pass for{' '}
+                <span className="text-netflix-red font-bold">{event.title}</span> is ready.
               </p>
             </div>
 
@@ -267,7 +269,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
               <div className="flex justify-between items-center text-xs text-netflix-light-grey border-b border-white/10 pb-2">
                 <span>PASS CODE: #TK-{Math.floor(100000 + Math.random() * 900000)}</span>
                 <span className="text-emerald-400 font-extrabold flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5" /> CONFIRMED
+                  <ShieldCheck className="w-3.5 h-3.5" /> 1-CLICK VERIFIED
                 </span>
               </div>
 
@@ -282,11 +284,11 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
                   <span className="text-netflix-white font-semibold">{event.date} • {event.time}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Seats/Tier:</span>
+                  <span>Pass Tier:</span>
                   <span className="text-netflix-red font-bold">{tierName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Total Paid:</span>
+                  <span>Express Paid:</span>
                   <span className="text-netflix-white font-bold">${totalPrice}</span>
                 </div>
               </div>
@@ -296,7 +298,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
               onClick={onClose}
               className="bg-netflix-red hover:bg-netflix-red/90 text-netflix-white font-bold px-8 py-3 rounded-md transition-all active:scale-95 text-sm cursor-pointer shadow-md"
             >
-              View Ticket in Wallet
+              View Pass in Wallet
             </button>
           </div>
         ) : (
@@ -335,229 +337,139 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
 
             {/* Modal Body Container */}
             <div className="p-5 sm:p-7 space-y-6">
-              {/* Step 1: Seat Picker & Tier Selection */}
-              {step === 1 && (
-                <div className="space-y-5">
-                  {/* Mode Switcher */}
-                  <div className="flex items-center justify-between bg-netflix-black p-1 rounded-md border border-white/10 text-xs font-bold">
-                    <button
-                      type="button"
-                      onClick={() => setBookingMode('seats')}
-                      className={`flex-1 py-2 text-center rounded-md transition-colors cursor-pointer ${
-                        bookingMode === 'seats'
-                          ? 'bg-netflix-red text-white'
-                          : 'text-netflix-light-grey hover:text-white'
-                      }`}
-                    >
-                      Interactive Seat Map
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setBookingMode('tier')}
-                      className={`flex-1 py-2 text-center rounded-md transition-colors cursor-pointer ${
-                        bookingMode === 'tier'
-                          ? 'bg-netflix-red text-white'
-                          : 'text-netflix-light-grey hover:text-white'
-                      }`}
-                    >
-                      Quick Tier Selection
-                    </button>
-                  </div>
+              {/* Mode Switcher (Express 1-Click vs Interactive Seat Map) */}
+              <div className="flex items-center justify-between bg-netflix-black p-1 rounded-md border border-white/10 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setBookingMode('express')}
+                  className={`flex-1 py-2 text-center rounded-md transition-colors cursor-pointer flex items-center justify-center gap-1 ${
+                    bookingMode === 'express'
+                      ? 'bg-netflix-red text-white'
+                      : 'text-netflix-light-grey hover:text-white'
+                  }`}
+                >
+                  <Zap className="w-3.5 h-3.5 fill-white" />
+                  <span>Express 1-Click Checkout</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBookingMode('seats')}
+                  className={`flex-1 py-2 text-center rounded-md transition-colors cursor-pointer ${
+                    bookingMode === 'seats'
+                      ? 'bg-netflix-red text-white'
+                      : 'text-netflix-light-grey hover:text-white'
+                  }`}
+                >
+                  Custom Seat Picker
+                </button>
+              </div>
 
-                  {bookingMode === 'seats' ? (
-                    <SeatPicker
-                      basePrice={basePriceNumber}
-                      onSeatsChange={(seats) => setSelectedSeats(seats)}
-                    />
-                  ) : (
-                    /* Tier Selection */
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {tiers.map((tier) => {
-                          const price = Math.round(basePriceNumber * tier.multiplier);
-                          const isSelected = selectedTier === tier.id;
-                          return (
-                            <div
-                              key={tier.id}
-                              onClick={() => setSelectedTier(tier.id as any)}
-                              className={`p-4 rounded-md cursor-pointer transition-all duration-200 ${
-                                isSelected
-                                  ? 'bg-netflix-black border-2 border-netflix-red'
-                                  : 'bg-netflix-black/60 hover:bg-netflix-black border border-white/5'
-                              }`}
-                            >
-                              <div className="font-bold text-sm text-netflix-white">{tier.name}</div>
-                              <p className="text-[11px] text-netflix-light-grey mt-1">{tier.desc}</p>
-                              <div className="mt-3 text-lg font-black text-netflix-white">${price}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Quantity Selector */}
-                      <div className="flex items-center justify-between bg-netflix-black p-4 rounded-md">
-                        <div className="text-xs font-bold text-netflix-white">Number of Tickets</div>
-                        <div className="flex items-center space-x-3">
-                          <button
-                            type="button"
-                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                            className="w-8 h-8 rounded-md bg-netflix-dark-grey text-white font-bold"
-                          >
-                            -
-                          </button>
-                          <span className="font-extrabold text-base text-netflix-white">{quantity}</span>
-                          <button
-                            type="button"
-                            onClick={() => setQuantity(Math.min(6, quantity + 1))}
-                            className="w-8 h-8 rounded-md bg-netflix-dark-grey text-white font-bold"
-                          >
-                            +
-                          </button>
+              {/* Express 1-Click Mode */}
+              {bookingMode === 'express' ? (
+                <div className="space-y-5 bg-netflix-black p-5 rounded-md border border-white/10">
+                  {/* Auth / Account Quick Status Bar */}
+                  {currentUser ? (
+                    <div className="flex items-center justify-between bg-netflix-dark-grey p-3 rounded-md border border-emerald-500/30">
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={currentUser.avatar}
+                          alt={currentUser.name}
+                          className="w-10 h-10 rounded-md object-cover ring-2 ring-netflix-red"
+                        />
+                        <div className="text-xs">
+                          <div className="font-bold text-netflix-white flex items-center gap-1">
+                            <span>{currentUser.name}</span>
+                            <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded font-semibold">
+                              Verified Account
+                            </span>
+                          </div>
+                          <div className="text-netflix-light-grey text-[11px]">
+                            {currentUser.email} ({currentUser.provider})
+                          </div>
                         </div>
                       </div>
+                      <span className="text-[10px] text-netflix-light-grey">Auto-Filled</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between bg-netflix-dark-grey p-3.5 rounded-md border border-netflix-red/40">
+                      <div className="text-xs">
+                        <div className="font-bold text-netflix-white">Sign In for 1-Click Checkout</div>
+                        <div className="text-[11px] text-netflix-light-grey">
+                          Use Google, Instagram, or Apple account to auto-fill ticket details.
+                        </div>
+                      </div>
+                      <button
+                        onClick={onOpenAuthModal}
+                        className="bg-netflix-red hover:bg-netflix-red/90 text-white text-xs font-bold px-3 py-1.5 rounded-md transition-colors cursor-pointer shrink-0"
+                      >
+                        Sign In Now
+                      </button>
                     </div>
                   )}
-                </div>
-              )}
 
-              {/* Step 2: Customer Contact Info */}
-              {step === 2 && (
-                <div className="space-y-4">
-                  <h3 className="text-sm font-bold text-netflix-white uppercase tracking-wider">
-                    Attendee Contact Details
-                  </h3>
-
-                  <div className="space-y-3 bg-netflix-black p-4 rounded-md border border-white/5 text-xs">
-                    <div className="space-y-1">
-                      <label className="text-netflix-light-grey font-semibold">Full Name</label>
-                      <input
-                        type="text"
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
+                  {/* Quantity & Tier Selection Summary */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div className="space-y-1.5">
+                      <label className="text-netflix-light-grey font-semibold">Select Ticket Tier</label>
+                      <select
+                        value={selectedTier}
+                        onChange={(e) => setSelectedTier(e.target.value as any)}
                         className="w-full bg-netflix-dark-grey text-netflix-white p-2.5 rounded-md border border-white/10 focus:border-netflix-red focus:outline-none"
-                      />
+                      >
+                        {tiers.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name} (${Math.round(basePriceNumber * t.multiplier)})
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="text-netflix-light-grey font-semibold">Email Address (For Pass Delivery)</label>
-                      <input
-                        type="email"
-                        value={customerEmail}
-                        onChange={(e) => setCustomerEmail(e.target.value)}
-                        className="w-full bg-netflix-dark-grey text-netflix-white p-2.5 rounded-md border border-white/10 focus:border-netflix-red focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-netflix-light-grey font-semibold">Mobile Phone (SMS Gate Pass)</label>
-                      <input
-                        type="tel"
-                        value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        className="w-full bg-netflix-dark-grey text-netflix-white p-2.5 rounded-md border border-white/10 focus:border-netflix-red focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Payment Method & Review */}
-              {step === 3 && (
-                <div className="space-y-4">
-                  <h3 className="text-sm font-bold text-netflix-white uppercase tracking-wider">
-                    Select Payment Method
-                  </h3>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {[
-                      { id: 'card', name: 'Credit Card', icon: CreditCard },
-                      { id: 'applepay', name: 'Apple Pay', icon: Smartphone },
-                      { id: 'googlepay', name: 'Google Pay', icon: Smartphone },
-                      { id: 'crypto', name: 'Crypto Web3', icon: Lock },
-                    ].map((method) => {
-                      const Icon = method.icon;
-                      const isSelected = paymentMethod === method.id;
-                      return (
-                        <div
-                          key={method.id}
-                          onClick={() => setPaymentMethod(method.id as any)}
-                          className={`p-3 rounded-md cursor-pointer text-center space-y-1 transition-all ${
-                            isSelected
-                              ? 'bg-netflix-black border-2 border-netflix-red text-netflix-red'
-                              : 'bg-netflix-black/60 hover:bg-netflix-black text-netflix-light-grey border border-white/5'
-                          }`}
+                    <div className="space-y-1.5">
+                      <label className="text-netflix-light-grey font-semibold">Ticket Quantity</label>
+                      <div className="flex items-center space-x-3 bg-netflix-dark-grey p-1.5 rounded-md border border-white/10">
+                        <button
+                          type="button"
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          className="w-7 h-7 bg-netflix-black text-white font-bold rounded-md cursor-pointer"
                         >
-                          <Icon className="w-5 h-5 mx-auto" />
-                          <div className="text-xs font-bold">{method.name}</div>
-                        </div>
-                      );
-                    })}
+                          -
+                        </button>
+                        <span className="flex-1 text-center font-extrabold text-sm text-netflix-white">
+                          {quantity} Ticket(s)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setQuantity(Math.min(6, quantity + 1))}
+                          className="w-7 h-7 bg-netflix-black text-white font-bold rounded-md cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Order Review Box */}
-                  <div className="bg-netflix-black p-4 rounded-md border border-white/10 space-y-2 text-xs">
-                    <div className="font-bold text-netflix-white flex justify-between border-b border-white/10 pb-2">
-                      <span>Order Summary</span>
-                      <span className="text-netflix-red font-black">${totalPrice}</span>
-                    </div>
-                    <div className="flex justify-between text-netflix-light-grey">
-                      <span>Event:</span>
-                      <span className="text-netflix-white font-semibold">{event.title}</span>
-                    </div>
-                    <div className="flex justify-between text-netflix-light-grey">
-                      <span>Passes/Seats:</span>
-                      <span className="text-netflix-white font-semibold">{tierName}</span>
-                    </div>
-                    <div className="flex justify-between text-netflix-light-grey">
-                      <span>Recipient:</span>
-                      <span className="text-netflix-white font-semibold">{customerName} ({customerEmail})</span>
-                    </div>
+                  {/* Express 1-Click Pay Big CTA Button */}
+                  <div className="pt-2">
+                    <button
+                      onClick={handleExpressCheckout}
+                      className="w-full flex items-center justify-center space-x-2 bg-netflix-red hover:bg-netflix-red/90 text-netflix-white font-extrabold text-base py-3.5 rounded-md transition-all active:scale-95 cursor-pointer shadow-xl"
+                    >
+                      <Zap className="w-5 h-5 fill-white" />
+                      <span>1-Click Express Pay (${totalPrice})</span>
+                    </button>
                   </div>
                 </div>
+              ) : (
+                /* Custom Seat Map Mode */
+                <SeatPicker
+                  basePrice={basePriceNumber}
+                  onSeatsChange={(seats) => setSelectedSeats(seats)}
+                />
               )}
 
-              {/* Wizard Nav Control Footer */}
-              <div className="flex items-center justify-between pt-4 border-t border-white/10 gap-4">
-                {step > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => setStep((step - 1) as any)}
-                    className="flex items-center space-x-1 bg-netflix-black hover:bg-netflix-black/80 text-netflix-light-grey hover:text-white px-4 py-2.5 rounded-md text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                    <span>Back</span>
-                  </button>
-                ) : (
-                  <div />
-                )}
-
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <div className="text-[10px] text-netflix-light-grey uppercase font-semibold">Total Price</div>
-                    <div className="text-xl font-black text-netflix-white">${totalPrice}</div>
-                  </div>
-
-                  {step < 3 ? (
-                    <button
-                      type="button"
-                      disabled={bookingMode === 'seats' && selectedSeats.length === 0}
-                      onClick={() => setStep((step + 1) as any)}
-                      className="flex items-center space-x-1 bg-netflix-red hover:bg-netflix-red/90 disabled:opacity-50 disabled:cursor-not-allowed text-netflix-white font-extrabold text-sm px-6 py-2.5 rounded-md transition-all active:scale-95 cursor-pointer shadow-md"
-                    >
-                      <span>Continue</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleCompleteOrder}
-                      className="flex items-center space-x-2 bg-netflix-red hover:bg-netflix-red/90 text-netflix-white font-extrabold text-sm px-7 py-2.5 rounded-md transition-all active:scale-95 cursor-pointer shadow-lg"
-                    >
-                      <Ticket className="w-4 h-4" />
-                      <span>Pay & Issue Pass</span>
-                    </button>
-                  )}
-                </div>
+              <div className="flex items-center justify-center space-x-2 text-[11px] text-netflix-light-grey pt-1">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>Verified 100% Authentic Ticket Guarantee by TickIt Express</span>
               </div>
             </div>
           </div>

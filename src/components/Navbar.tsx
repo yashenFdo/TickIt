@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, Ticket, User, Menu, X, Heart } from 'lucide-react';
+import { Search, Bell, Ticket, User, Menu, X, Heart, LogOut } from 'lucide-react';
+import type { UserProfile } from './AuthModal';
 
 interface NavbarProps {
   onSearchChange?: (query: string) => void;
   selectedCategory: string;
   onSelectCategory: (category: string) => void;
   onOpenMyTickets: () => void;
+  onOpenAuthModal: () => void;
+  currentUser: UserProfile | null;
+  onLogout: () => void;
   bookmarkCount?: number;
 }
 
@@ -14,12 +18,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   selectedCategory,
   onSelectCategory,
   onOpenMyTickets,
+  onOpenAuthModal,
+  currentUser,
+  onLogout,
   bookmarkCount = 0,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -164,12 +172,53 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="hidden xs:inline">My Tickets</span>
           </button>
 
-          {/* User Profile Avatar */}
-          <div className="flex items-center space-x-2 cursor-pointer group">
-            <div className="w-8 h-8 rounded-md bg-gradient-to-br from-red-600 to-netflix-red flex items-center justify-center text-netflix-white font-bold text-xs shadow-md border border-white/10">
-              <User className="w-4 h-4 text-netflix-white" />
+          {/* User Authentication Avatar / Sign In */}
+          {currentUser ? (
+            <div className="relative">
+              <button
+                onClick={() => setShowUserDropdown(!showUserDropdown)}
+                className="flex items-center space-x-2 focus:outline-none cursor-pointer"
+              >
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-8 h-8 rounded-md object-cover ring-2 ring-netflix-red/80"
+                />
+              </button>
+
+              {/* User Dropdown */}
+              {showUserDropdown && (
+                <div className="absolute right-0 mt-2 w-56 bg-netflix-dark-grey border border-white/10 rounded-md shadow-2xl py-2 z-50 text-xs space-y-2 animate-fadeIn">
+                  <div className="px-4 py-2 border-b border-white/10">
+                    <div className="font-bold text-netflix-white line-clamp-1">{currentUser.name}</div>
+                    <div className="text-[10px] text-netflix-light-grey line-clamp-1">{currentUser.email}</div>
+                    <div className="mt-1 text-[9px] bg-netflix-red/20 text-netflix-red border border-netflix-red/30 px-1.5 py-0.2 rounded inline-block font-semibold">
+                      Via {currentUser.provider}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      onLogout();
+                      setShowUserDropdown(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-netflix-light-grey hover:text-netflix-red hover:bg-white/5 flex items-center space-x-2 transition-colors font-semibold"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
+          ) : (
+            <button
+              onClick={onOpenAuthModal}
+              className="bg-netflix-dark-grey hover:bg-netflix-black text-netflix-white border border-white/20 hover:border-netflix-red text-xs font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center space-x-1.5"
+            >
+              <User className="w-3.5 h-3.5 text-netflix-red" />
+              <span>Sign In</span>
+            </button>
+          )}
 
           {/* Mobile Menu Toggle Button */}
           <button

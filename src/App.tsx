@@ -5,6 +5,8 @@ import { EventRow } from './components/EventRow';
 import { EventCard } from './components/EventCard';
 import { EventModal } from './components/EventModal';
 import { TrailerModal } from './components/TrailerModal';
+import { AuthModal } from './components/AuthModal';
+import type { UserProfile } from './components/AuthModal';
 import { MyTicketsDrawer } from './components/MyTicketsDrawer';
 import type { PurchasedTicket } from './components/MyTicketsDrawer';
 import { FilterBar } from './components/FilterBar';
@@ -20,6 +22,15 @@ export function App() {
   const [selectedEventModal, setSelectedEventModal] = useState<EventItem | null>(null);
   const [trailerEventModal, setTrailerEventModal] = useState<EventItem | null>(null);
   const [isTicketsDrawerOpen, setIsTicketsDrawerOpen] = useState<boolean>(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+
+  // Social Auth User State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>({
+    name: 'Yashen Fernando',
+    email: 'yashen.fernando@gmail.com',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop',
+    provider: 'Google',
+  });
 
   // Bookmarking / Favorites State
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(
@@ -54,7 +65,7 @@ export function App() {
       quantity: 2,
       totalPrice: 190,
       purchaseDate: '2026-08-04',
-      customerName: 'Alex Morgan',
+      customerName: 'Yashen Fernando',
     },
   ]);
 
@@ -182,6 +193,9 @@ export function App() {
         }}
         onSearchChange={(q) => setSearchQuery(q)}
         onOpenMyTickets={() => setIsTicketsDrawerOpen(true)}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        currentUser={currentUser}
+        onLogout={() => setCurrentUser(null)}
         bookmarkCount={bookmarkedIds.size}
       />
 
@@ -387,9 +401,18 @@ export function App() {
         </div>
       </footer>
 
-      {/* Ticket Purchase & Seat Selection Wizard Modal */}
+      {/* Social Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={(user) => setCurrentUser(user)}
+      />
+
+      {/* Express 1-Click Ticket Purchase & Seat Selection Wizard Modal */}
       <EventModal
         event={selectedEventModal}
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onClose={() => setSelectedEventModal(null)}
         onConfirmPurchase={handleConfirmPurchase}
       />
