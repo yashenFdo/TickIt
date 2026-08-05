@@ -62,18 +62,19 @@ export const EventRow: React.FC<EventRowProps> = ({
         {/* Scrollable Events Row */}
         <div
           ref={rowRef}
-          className="flex items-center space-x-4 overflow-x-auto no-scrollbar py-3 scroll-smooth"
+          className="flex items-stretch space-x-3 sm:space-x-4 overflow-x-auto no-scrollbar py-3 scroll-smooth"
         >
           {events.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              isBookmarked={bookmarkedIds.has(event.id)}
-              onSelect={onSelectEvent}
-              onBuyTickets={onBuyTickets}
-              onToggleBookmark={onToggleBookmark}
-              onWatchTrailer={onWatchTrailer}
-            />
+            <div key={event.id} className="flex-none w-52 sm:w-64 md:w-72">
+              <EventCard
+                event={event}
+                isBookmarked={bookmarkedIds.has(event.id)}
+                onSelect={onSelectEvent}
+                onBuyTickets={onBuyTickets}
+                onToggleBookmark={onToggleBookmark}
+                onWatchTrailer={onWatchTrailer}
+              />
+            </div>
           ))}
         </div>
 

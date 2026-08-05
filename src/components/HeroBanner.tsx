@@ -21,7 +21,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   onToggleBookmark,
 }) => {
   return (
-    <div className="relative w-full h-[82vh] min-h-[560px] max-h-[780px] overflow-hidden bg-netflix-black select-none">
+    <div className="relative w-full min-h-[85vh] sm:h-[82vh] sm:min-h-[560px] sm:max-h-[780px] overflow-hidden bg-netflix-black select-none">
       {/* Background Image with Cinematic Gradient Masking */}
       <div className="absolute inset-0">
         <img
@@ -30,14 +30,15 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           className="w-full h-full object-cover object-center scale-105 filter brightness-90 animate-fade-in"
         />
         {/* Dark Netflix Cinematic Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-r from-netflix-black via-netflix-black/75 to-transparent w-full md:w-3/4 z-10" />
-        <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-netflix-black via-netflix-black/80 to-transparent z-10" />
-        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-netflix-black/90 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-netflix-black via-netflix-black/80 to-transparent w-full md:w-3/4 z-10" />
+        <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-netflix-black via-netflix-black/80 to-transparent z-10" />
+        {/* Top gradient covers the fixed navbar overlap area */}
+        <div className="absolute inset-x-0 top-0 h-24 sm:h-32 bg-gradient-to-b from-netflix-black to-transparent z-10" />
       </div>
 
-      {/* Content Container */}
-      <div className="relative z-20 max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-16 sm:pb-24">
-        <div className="max-w-2xl space-y-4">
+      {/* Content Container — pt accounts for fixed navbar height */}
+      <div className="relative z-20 max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex flex-col justify-end pt-16 sm:pt-20 pb-10 sm:pb-16 lg:pb-24">
+        <div className="max-w-2xl space-y-3 sm:space-y-4">
           {/* Top Badges & Live Countdown Ticker */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-semibold tracking-wider">
             {/* Netflix Match Percentage */}
@@ -69,11 +70,11 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           </div>
 
           {/* Title & Subtitle */}
-          <div className="space-y-1">
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-netflix-white uppercase font-sans drop-shadow-md leading-none">
+          <div className="space-y-1.5">
+            <h1 className="text-2xl sm:text-4xl lg:text-6xl font-black tracking-tight text-netflix-white uppercase font-sans drop-shadow-md leading-tight">
               {event.title}
             </h1>
-            <p className="text-base sm:text-xl font-medium text-netflix-light-grey">
+            <p className="text-sm sm:text-lg lg:text-xl font-medium text-netflix-light-grey line-clamp-2">
               {event.subtitle}
             </p>
           </div>
@@ -132,7 +133,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
           </p>
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 sm:pt-2">
             {/* Primary Express Ticket Button */}
             <button
               onClick={() => onGetTickets(event)}
