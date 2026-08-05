@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, User, Mail, Phone, CreditCard, Lock, Camera, CheckCircle2, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, User, Mail, Phone, CreditCard, Lock, Camera, CheckCircle2, Save, ChevronLeft, Loader2, AlertTriangle } from 'lucide-react';
 import type { UserProfile } from './AuthModal';
 
 interface AccountSettingsModalProps {
@@ -8,6 +8,8 @@ interface AccountSettingsModalProps {
   onClose: () => void;
   onUpdateUser: (updatedUser: UserProfile) => void;
 }
+
+type VerificationStep = 'none' | 'email' | 'mobile' | 'nic-check';
 
 export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   isOpen,
@@ -24,6 +26,11 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   const [nic, setNic] = useState(currentUser.nic || '');
   const [avatar, setAvatar] = useState(currentUser.avatar);
 
+  // Verification state
+  const [verificationStep, setVerificationStep] = useState<VerificationStep>('none');
+  const [otpCode, setOtpCode] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   // Local state for password change (simulated)
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -33,8 +40,16 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Reset verification state when modal closes/opens
+  useEffect(() => {
+    if (!isOpen) {
+      setVerificationStep('none');
+      setOtpCode('');
+      setErrorMsg(null);
+    }
+  }, [isOpen]);
+
+  const finalizeProfileUpdate = () => {
     onUpdateUser({
       ...currentUser,
       name,
@@ -43,7 +58,62 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
       nic,
       avatar,
     });
+    setVerificationStep('none');
     showSavedFeedback();
+  };
+
+  const checkNextVerificationStep = (currentCompleted: 'email' | 'mobile' | 'none') => {
+    const emailChanged = email !== currentUser.email;
+    const mobileChanged = mobile !== currentUser.mobile;
+    const nicChanged = nic !== currentUser.nic;
+
+    if (currentCompleted === 'none') {
+      if (emailChanged) return setVerificationStep('email');
+      if (mobileChanged) return setVerificationStep('mobile');
+      if (nicChanged) return startNicCheck();
+      return finalizeProfileUpdate();
+    }
+
+    if (currentCompleted === 'email') {
+      if (mobileChanged) return setVerificationStep('mobile');
+      if (nicChanged) return startNicCheck();
+      return finalizeProfileUpdate();
+    }
+
+    if (currentCompleted === 'mobile') {
+      if (nicChanged) return startNicCheck();
+      return finalizeProfileUpdate();
+    }
+  };
+
+  const startNicCheck = () => {
+    setVerificationStep('nic-check');
+    setErrorMsg(null);
+    // Simulate backend delay
+    setTimeout(() => {
+      if (nic.toUpperCase() === '123456789V') {
+        setErrorMsg('This NIC is already associated with another account.');
+      } else {
+        finalizeProfileUpdate();
+      }
+    }, 1500);
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    checkNextVerificationStep('none');
+  };
+
+  const handleVerifyOtp = (e: React.FormEvent, stepType: 'email' | 'mobile') => {
+    e.preventDefault();
+    if (otpCode.length < 4) {
+      setErrorMsg('Please enter a valid 4-digit code.');
+      return;
+    }
+    setErrorMsg(null);
+    setOtpCode('');
+    checkNextVerificationStep(stepType);
   };
 
   const handleSaveSecurity = (e: React.FormEvent) => {
@@ -69,8 +139,6 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   };
 
   const handleAvatarChange = () => {
-    // In a real app, this would open a file picker.
-    // For this demo, we'll cycle through a few high-quality Unsplash avatars.
     const avatars = [
       'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop',
@@ -82,6 +150,86 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
     const nextIndex = (currentIndex + 1) % avatars.length;
     setAvatar(avatars[nextIndex]);
   };
+
+  // --- Render Verification Steps ---
+  if (verificationStep === 'email' || verificationStep === 'mobile') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+        <div className="relative w-full max-w-sm bg-netflix-dark-grey text-white rounded-xl overflow-hidden shadow-2xl border border-white/10 p-6 space-y-6">
+          <button onClick={() => setVerificationStep('none')} className="absolute top-4 left-4 text-white/50 hover:text-white transition-colors">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          
+          <div className="text-center pt-4 space-y-2">
+            <div className="inline-flex bg-netflix-red/20 p-3 rounded-full mb-2">
+              {verificationStep === 'email' ? <Mail className="w-6 h-6 text-netflix-red" /> : <Phone className="w-6 h-6 text-netflix-red" />}
+            </div>
+            <h2 className="text-xl font-black">Verify {verificationStep === 'email' ? 'Email' : 'Mobile'}</h2>
+            <p className="text-xs text-white/50 px-4">
+              Enter the 4-digit verification code sent to <br/>
+              <span className="text-white font-bold">{verificationStep === 'email' ? email : mobile}</span>
+            </p>
+          </div>
+
+          <form onSubmit={(e) => handleVerifyOtp(e, verificationStep)} className="space-y-4">
+            <div>
+              <input
+                type="text"
+                maxLength={4}
+                autoFocus
+                value={otpCode}
+                onChange={(e) => {
+                  setOtpCode(e.target.value.replace(/[^0-9]/g, ''));
+                  setErrorMsg(null);
+                }}
+                placeholder="0000"
+                className="w-full bg-black/50 text-white text-center text-2xl tracking-[1em] font-mono py-3 rounded border border-white/10 focus:border-netflix-red focus:outline-none transition-colors"
+              />
+              {errorMsg && <p className="text-netflix-red text-xs mt-2 text-center">{errorMsg}</p>}
+            </div>
+            <button
+              type="submit"
+              disabled={otpCode.length < 4}
+              className="w-full flex items-center justify-center gap-2 bg-netflix-red hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm py-3 rounded transition-all active:scale-[0.98]"
+            >
+              Verify & Continue
+            </button>
+            <p className="text-[10px] text-center text-white/40">Demo: Enter any 4 digits to pass.</p>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  if (verificationStep === 'nic-check') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+        <div className="relative w-full max-w-sm bg-netflix-dark-grey text-white rounded-xl overflow-hidden shadow-2xl border border-white/10 p-8 flex flex-col items-center justify-center text-center space-y-4">
+          {errorMsg ? (
+            <>
+              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-netflix-red" />
+              </div>
+              <h2 className="text-lg font-black text-white">NIC Verification Failed</h2>
+              <p className="text-sm text-white/60">{errorMsg}</p>
+              <button
+                onClick={() => setVerificationStep('none')}
+                className="mt-4 w-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm py-3 rounded transition-all active:scale-[0.98]"
+              >
+                Go Back
+              </button>
+            </>
+          ) : (
+            <>
+              <Loader2 className="w-10 h-10 text-netflix-red animate-spin" />
+              <h2 className="text-lg font-bold text-white mt-2">Verifying NIC...</h2>
+              <p className="text-xs text-white/50">Checking backend database securely</p>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
@@ -175,6 +323,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                         className="w-full bg-black/50 text-white text-sm pl-9 pr-3 py-3 rounded border border-white/10 focus:border-netflix-red focus:outline-none transition-colors"
                       />
                     </div>
+                    {email !== currentUser.email && <p className="text-[10px] text-amber-500 pl-1">Requires verification on save.</p>}
                   </div>
 
                   <div className="space-y-1.5">
@@ -189,6 +338,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                         className="w-full bg-black/50 text-white text-sm pl-9 pr-3 py-3 rounded border border-white/10 focus:border-netflix-red focus:outline-none transition-colors"
                       />
                     </div>
+                    {mobile !== currentUser.mobile && mobile !== '' && <p className="text-[10px] text-amber-500 pl-1">Requires verification on save.</p>}
                   </div>
 
                   <div className="space-y-1.5">
@@ -203,6 +353,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                         className="w-full bg-black/50 text-white text-sm pl-9 pr-3 py-3 rounded border border-white/10 focus:border-netflix-red focus:outline-none transition-colors"
                       />
                     </div>
+                    <p className="text-[10px] text-white/40 pl-1">Demo: NIC "123456789V" triggers an error.</p>
                   </div>
                 </div>
 
