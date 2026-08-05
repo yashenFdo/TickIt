@@ -14,11 +14,7 @@ import type { FilterState } from './components/FilterBar';
 import { FEATURED_EVENT, EVENTS_BY_CATEGORY, EVENT_CATEGORIES } from './data/events';
 import type { EventItem } from './data/events';
 import type { SelectedSeat } from './components/SeatPicker';
-import {
-  Sparkles, Film, Ticket, ShieldCheck, Zap, Heart,
-  MessageCircle, AtSign, Share2, Video, Mail, Phone,
-  MapPin, Globe, ChevronRight,
-} from 'lucide-react';
+import { Sparkles, Film, Ticket, ShieldCheck, Zap, Heart, Mail, Phone, MapPin, Globe, ChevronRight, MessageCircle, AtSign, Share2, Video } from 'lucide-react';
 
 export function App() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -41,13 +37,9 @@ export function App() {
 
   const handleToggleBookmark = (event: EventItem) => {
     setBookmarkedIds((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(event.id)) {
-        updated.delete(event.id);
-      } else {
-        updated.add(event.id);
-      }
-      return updated;
+      const next = new Set(prev);
+      next.has(event.id) ? next.delete(event.id) : next.add(event.id);
+      return next;
     });
   };
 
@@ -57,6 +49,12 @@ export function App() {
     maxPrice: 600,
     sortBy: 'match',
   });
+
+  const resetFilters = () => {
+    setFilters({ city: 'All Locations', dateRange: 'all', maxPrice: 600, sortBy: 'match' });
+    setSelectedCategory('all');
+    setSearchQuery('');
+  };
 
   const initialTicketEvent = Object.values(EVENTS_BY_CATEGORY)[0]?.[0] || FEATURED_EVENT;
 
@@ -74,13 +72,11 @@ export function App() {
 
   const allEventsList = useMemo(() => {
     const list: EventItem[] = [FEATURED_EVENT];
-    Object.values(EVENTS_BY_CATEGORY).forEach((arr) => {
+    Object.values(EVENTS_BY_CATEGORY).forEach((arr) =>
       arr.forEach((item) => {
-        if (!list.some((existing) => existing.id === item.id)) {
-          list.push(item);
-        }
-      });
-    });
+        if (!list.some((e) => e.id === item.id)) list.push(item);
+      })
+    );
     return list;
   }, []);
 
@@ -110,29 +106,19 @@ export function App() {
       );
     }
 
-    if (filters.city !== 'All Locations') {
-      result = result.filter((e) => e.location.includes(filters.city));
-    }
+    if (filters.city !== 'All Locations') result = result.filter((e) => e.location.includes(filters.city));
 
-    if (filters.dateRange === 'tonight') {
-      result = result.filter((e) => e.date.toUpperCase().includes('TONIGHT') || e.isLive);
-    } else if (filters.dateRange === 'weekend') {
-      result = result.filter((e) => e.date.includes('SAT') || e.date.includes('SUN'));
-    }
+    if (filters.dateRange === 'tonight') result = result.filter((e) => e.isLive);
+    else if (filters.dateRange === 'weekend') result = result.filter((e) => e.date.includes('SAT') || e.date.includes('SUN'));
 
-    result = result.filter((e) => {
-      const priceNum = parseInt(e.price.replace(/[^0-9]/g, '')) || 50;
-      return priceNum <= filters.maxPrice;
-    });
+    result = result.filter((e) => (parseInt(e.price.replace(/[^0-9]/g, '')) || 50) <= filters.maxPrice);
 
     result.sort((a, b) => {
       if (filters.sortBy === 'match') return b.matchPercentage - a.matchPercentage;
-      if (filters.sortBy === 'price-asc') {
-        return (parseInt(a.price.replace(/[^0-9]/g, '')) || 0) - (parseInt(b.price.replace(/[^0-9]/g, '')) || 0);
-      }
-      if (filters.sortBy === 'price-desc') {
-        return (parseInt(b.price.replace(/[^0-9]/g, '')) || 0) - (parseInt(a.price.replace(/[^0-9]/g, '')) || 0);
-      }
+      const pA = parseInt(a.price.replace(/[^0-9]/g, '')) || 0;
+      const pB = parseInt(b.price.replace(/[^0-9]/g, '')) || 0;
+      if (filters.sortBy === 'price-asc') return pA - pB;
+      if (filters.sortBy === 'price-desc') return pB - pA;
       return 0;
     });
 
@@ -140,14 +126,10 @@ export function App() {
   }, [allEventsList, selectedCategory, searchQuery, filters, bookmarkedIds]);
 
   const handleConfirmPurchase = (ticketInfo: {
-    event: EventItem;
-    tier: string;
-    quantity: number;
-    totalPrice: number;
-    seats: SelectedSeat[];
-    customerName: string;
+    event: EventItem; tier: string; quantity: number;
+    totalPrice: number; seats: SelectedSeat[]; customerName: string;
   }) => {
-    const newTicket: PurchasedTicket = {
+    setPurchasedTickets((prev) => [{
       id: `TK-${Math.floor(100000 + Math.random() * 900000)}`,
       event: ticketInfo.event,
       tier: ticketInfo.tier,
@@ -156,35 +138,21 @@ export function App() {
       purchaseDate: new Date().toISOString().split('T')[0],
       seats: ticketInfo.seats,
       customerName: ticketInfo.customerName,
-    };
-    setPurchasedTickets((prev) => [newTicket, ...prev]);
+    }, ...prev]);
   };
 
-  const handleRemoveTicket = (id: string) => {
-    setPurchasedTickets((prev) => prev.filter((t) => t.id !== id));
-  };
+  const handleRemoveTicket = (id: string) => setPurchasedTickets((prev) => prev.filter((t) => t.id !== id));
 
-  const isFiltered =
-    searchQuery.trim() !== '' ||
-    selectedCategory !== 'all' ||
-    filters.city !== 'All Locations' ||
-    filters.dateRange !== 'all' ||
-    filters.maxPrice < 600;
-
-  const resetFilters = () => {
-    setFilters({ city: 'All Locations', dateRange: 'all', maxPrice: 600, sortBy: 'match' });
-    setSelectedCategory('all');
-    setSearchQuery('');
-  };
+  const isFiltered = searchQuery.trim() !== '' || selectedCategory !== 'all' || filters.city !== 'All Locations' || filters.dateRange !== 'all' || filters.maxPrice < 600;
 
   return (
-    <div className="min-h-screen bg-netflix-black text-netflix-white font-sans selection:bg-netflix-red selection:text-white flex flex-col">
+    <div className="min-h-screen bg-netflix-black text-white font-sans flex flex-col">
 
-      {/* ── Fixed Navbar ─────────────────────────────── */}
+      {/* Fixed Navbar */}
       <Navbar
         selectedCategory={selectedCategory}
         onSelectCategory={(cat) => { setSelectedCategory(cat); setSearchQuery(''); }}
-        onSearchChange={(q) => setSearchQuery(q)}
+        onSearchChange={setSearchQuery}
         onOpenMyTickets={() => setIsTicketsDrawerOpen(true)}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         currentUser={currentUser}
@@ -192,135 +160,107 @@ export function App() {
         bookmarkCount={bookmarkedIds.size}
       />
 
-      {/* ── Main Content ─────────────────────────────── */}
+      {/* Main content — no top padding here; hero handles its own spacing */}
       <main className="flex-1">
-
         {isFiltered ? (
-          /* ── Filtered / Search / My List View ── */
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-6">
-            <FilterBar
-              filters={filters}
-              onFilterChange={(updated) => setFilters(updated)}
-              onReset={resetFilters}
-            />
+          /* ── Filter / Search / My List view ── */
+          <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-5">
+            <FilterBar filters={filters} onFilterChange={setFilters} onReset={resetFilters} />
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-netflix-light-grey/10 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-white/10 pb-4">
               <div>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-netflix-white tracking-tight flex items-center gap-2 flex-wrap">
-                  {selectedCategory === 'mylist' && <Heart className="w-5 h-5 sm:w-6 sm:h-6 fill-netflix-red text-netflix-red" />}
-                  {selectedCategory === 'mylist'
-                    ? 'My Saved List'
-                    : searchQuery
-                    ? `Results for "${searchQuery}"`
-                    : 'Explore Events'}
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight flex flex-wrap items-center gap-2">
+                  {selectedCategory === 'mylist' && <Heart className="w-6 h-6 fill-netflix-red text-netflix-red" />}
+                  {selectedCategory === 'mylist' ? 'My Saved List' : searchQuery ? `"${searchQuery}"` : 'Explore Events'}
                 </h1>
-                <p className="text-xs text-netflix-light-grey mt-1">
-                  {filteredEvents.length} events found
-                </p>
+                <p className="text-xs text-netflix-light-grey mt-1">{filteredEvents.length} events found</p>
               </div>
               <button
                 onClick={resetFilters}
-                className="self-start sm:self-auto bg-netflix-dark-grey hover:bg-netflix-red text-netflix-white text-xs font-semibold px-4 py-2 rounded-md transition-colors whitespace-nowrap"
+                className="self-start sm:self-auto text-xs bg-netflix-dark-grey hover:bg-netflix-red text-white font-semibold px-4 py-2 rounded transition-colors whitespace-nowrap"
               >
-                Reset Filters
+                Reset All
               </button>
             </div>
 
             {filteredEvents.length === 0 ? (
-              <div className="text-center py-20 bg-netflix-dark-grey rounded-md space-y-3 px-4">
-                <Film className="w-12 h-12 text-netflix-light-grey/40 mx-auto" />
-                <h2 className="text-lg font-bold text-netflix-white">
+              <div className="text-center py-20 bg-netflix-dark-grey rounded space-y-3 px-4">
+                <Film className="w-12 h-12 text-netflix-light-grey/30 mx-auto" />
+                <h2 className="text-base sm:text-lg font-bold text-white">
                   {selectedCategory === 'mylist' ? 'Your Saved List is Empty' : 'No Events Found'}
                 </h2>
                 <p className="text-xs text-netflix-light-grey max-w-xs mx-auto">
                   {selectedCategory === 'mylist'
-                    ? 'Tap the heart icon on any event to save it here.'
-                    : 'Try clearing filters or searching something else.'}
+                    ? 'Tap the ♥ on any event card to save it here.'
+                    : 'Try adjusting filters or search differently.'}
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                 {filteredEvents.map((event) => (
                   <EventCard
                     key={event.id}
                     event={event}
                     isBookmarked={bookmarkedIds.has(event.id)}
-                    onSelect={(e) => setSelectedEventModal(e)}
-                    onBuyTickets={(e) => setSelectedEventModal(e)}
+                    onSelect={setSelectedEventModal}
+                    onBuyTickets={setSelectedEventModal}
                     onToggleBookmark={handleToggleBookmark}
-                    onWatchTrailer={(e) => setTrailerEventModal(e)}
+                    onWatchTrailer={setTrailerEventModal}
                   />
                 ))}
               </div>
             )}
           </div>
-
         ) : (
-          /* ── Home Dashboard ── */
+          /* ── Home / Default view ── */
           <>
-            {/* Hero Banner — sits directly under fixed navbar (no extra padding needed;
-                the hero itself is full-viewport-height and the navbar overlaps it intentionally
-                as in Netflix. The gradient covers the overlap area.) */}
+            {/* Hero — no extra top margin; it covers full viewport from top */}
             <HeroBanner
               event={FEATURED_EVENT}
               isBookmarked={bookmarkedIds.has(FEATURED_EVENT.id)}
-              onGetTickets={(e) => setSelectedEventModal(e)}
-              onMoreInfo={(e) => setSelectedEventModal(e)}
-              onWatchTrailer={(e) => setTrailerEventModal(e)}
+              onGetTickets={setSelectedEventModal}
+              onMoreInfo={setSelectedEventModal}
+              onWatchTrailer={setTrailerEventModal}
               onToggleBookmark={handleToggleBookmark}
             />
 
-            {/* Filter Bar */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 relative z-30">
+            {/* Filter bar */}
+            <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 relative z-30">
               <FilterBar
                 filters={filters}
-                onFilterChange={(updated) => setFilters(updated)}
+                onFilterChange={setFilters}
                 onReset={() => setFilters({ city: 'All Locations', dateRange: 'all', maxPrice: 600, sortBy: 'match' })}
               />
             </div>
 
-            {/* Event Rows */}
-            <div className="relative z-30 mt-4 space-y-4">
-              {Object.entries(EVENTS_BY_CATEGORY).map(([categoryTitle, eventsList]) => (
+            {/* Event rows */}
+            <div className="relative z-30 mt-3 space-y-2 pb-4">
+              {Object.entries(EVENTS_BY_CATEGORY).map(([cat, list]) => (
                 <EventRow
-                  key={categoryTitle}
-                  title={categoryTitle}
-                  events={eventsList}
+                  key={cat}
+                  title={cat}
+                  events={list}
                   bookmarkedIds={bookmarkedIds}
-                  onSelectEvent={(e) => setSelectedEventModal(e)}
-                  onBuyTickets={(e) => setSelectedEventModal(e)}
+                  onSelectEvent={setSelectedEventModal}
+                  onBuyTickets={setSelectedEventModal}
                   onToggleBookmark={handleToggleBookmark}
-                  onWatchTrailer={(e) => setTrailerEventModal(e)}
+                  onWatchTrailer={setTrailerEventModal}
                 />
               ))}
             </div>
 
-            {/* Trust Highlights Strip */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-14 mb-4">
-              <div className="bg-netflix-dark-grey rounded-md p-6 sm:p-10 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 text-left">
+            {/* Trust highlights */}
+            <section className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 mt-10 mb-6">
+              <div className="bg-netflix-dark-grey rounded p-5 sm:p-8 lg:p-10 grid grid-cols-1 sm:grid-cols-3 gap-6">
                 {[
-                  {
-                    icon: <Zap className="w-6 h-6" />,
-                    title: 'Instant QR Mobile Pass',
-                    desc: 'Zero physical tickets. Instant digital barcode delivery straight to your TickIt wallet.',
-                  },
-                  {
-                    icon: <ShieldCheck className="w-6 h-6" />,
-                    title: 'Verified 100% Guarantee',
-                    desc: 'Every ticket authenticated directly through official event organizers with full buyer protection.',
-                  },
-                  {
-                    icon: <Sparkles className="w-6 h-6" />,
-                    title: 'Personalized Recommendations',
-                    desc: 'Curated events tailored to your music taste, location, and past show attendance.',
-                  },
+                  { icon: <Zap className="w-6 h-6" />, title: 'Instant QR Mobile Pass', desc: 'Zero physical tickets. Digital barcode delivered instantly to your TickIt wallet.' },
+                  { icon: <ShieldCheck className="w-6 h-6" />, title: 'Verified 100% Guarantee', desc: 'Every ticket authenticated through official organizers with full buyer protection.' },
+                  { icon: <Sparkles className="w-6 h-6" />, title: 'Personalised Picks', desc: 'Curated recommendations based on your music taste, location, and past events.' },
                 ].map((item) => (
-                  <div key={item.title} className="flex items-start space-x-4">
-                    <div className="bg-netflix-red/20 text-netflix-red p-3 rounded-md shrink-0">
-                      {item.icon}
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="font-extrabold text-sm sm:text-base text-netflix-white">{item.title}</h3>
+                  <div key={item.title} className="flex items-start gap-4">
+                    <div className="bg-netflix-red/20 text-netflix-red p-3 rounded shrink-0">{item.icon}</div>
+                    <div>
+                      <h3 className="font-bold text-sm sm:text-base text-white mb-1">{item.title}</h3>
                       <p className="text-xs text-netflix-light-grey leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
@@ -331,28 +271,27 @@ export function App() {
         )}
       </main>
 
-      {/* ── Footer ───────────────────────────────────── */}
+      {/* ══════════════════════════════════════════
+          FOOTER
+      ══════════════════════════════════════════ */}
       <footer className="bg-netflix-dark-grey border-t border-white/5 text-netflix-light-grey">
 
-        {/* Newsletter Strip */}
-        <div className="bg-netflix-red/10 border-b border-netflix-red/20 py-8 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <h3 className="text-netflix-white font-bold text-base sm:text-lg">Never miss an event.</h3>
-              <p className="text-netflix-light-grey text-xs sm:text-sm mt-0.5">Get ticket drops, exclusive presales & personalised picks.</p>
+        {/* Newsletter bar */}
+        <div className="border-b border-netflix-red/20 bg-netflix-red/8 py-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-screen-xl mx-auto flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-8">
+            <div className="text-center sm:text-left shrink-0">
+              <p className="text-white font-bold text-base sm:text-lg">Never miss an event.</p>
+              <p className="text-netflix-light-grey text-xs sm:text-sm mt-0.5">Get drops, presales & personalised picks.</p>
             </div>
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="flex w-full sm:w-auto gap-2"
-            >
+            <form onSubmit={(e) => e.preventDefault()} className="flex w-full sm:w-auto gap-2">
               <input
                 type="email"
                 placeholder="your@email.com"
-                className="flex-1 sm:w-64 bg-netflix-black/60 text-netflix-white text-sm px-4 py-2.5 rounded-md border border-white/10 focus:border-netflix-red focus:outline-none placeholder-netflix-light-grey/50"
+                className="flex-1 sm:w-60 bg-black/50 text-white text-sm px-4 py-2.5 rounded border border-white/10 focus:border-netflix-red focus:outline-none placeholder-netflix-light-grey/50"
               />
               <button
                 type="submit"
-                className="bg-netflix-red hover:bg-netflix-red/90 text-white text-sm font-semibold px-5 py-2.5 rounded-md transition-colors whitespace-nowrap flex items-center gap-1.5"
+                className="bg-netflix-red hover:bg-red-700 text-white text-sm font-semibold px-4 sm:px-5 py-2.5 rounded transition-colors flex items-center gap-1.5 whitespace-nowrap"
               >
                 <Mail className="w-4 h-4" />
                 Subscribe
@@ -361,36 +300,35 @@ export function App() {
           </div>
         </div>
 
-        {/* Main Footer Grid */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Main grid */}
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
 
-            {/* Brand Column */}
-            <div className="col-span-2 sm:col-span-2 lg:col-span-1 space-y-4">
-              <div className="flex items-center space-x-2">
-                <div className="bg-netflix-red text-white p-1.5 rounded-md">
-                  <Ticket className="w-5 h-5" />
+            {/* Brand */}
+            <div className="col-span-2 lg:col-span-1 space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="bg-netflix-red p-1.5 rounded">
+                  <Ticket className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-xl font-black tracking-tight text-netflix-red">
-                  TICK<span className="text-netflix-white">IT</span>
+                  TICK<span className="text-white">IT</span>
                 </span>
               </div>
               <p className="text-xs text-netflix-light-grey leading-relaxed max-w-xs">
                 The world's most cinematic event ticketing platform. From sold-out concerts to exclusive sporting events — your next unforgettable experience starts here.
               </p>
-              {/* Social Icons */}
-              <div className="flex items-center gap-3 pt-1">
+              <div className="flex gap-2 pt-1">
                 {[
-                  { icon: <MessageCircle className="w-4 h-4" />, label: 'Community', href: '#' },
-                  { icon: <AtSign className="w-4 h-4" />, label: 'Instagram', href: '#' },
-                  { icon: <Share2 className="w-4 h-4" />, label: 'Share', href: '#' },
-                  { icon: <Video className="w-4 h-4" />, label: 'YouTube', href: '#' },
+                  { icon: <MessageCircle className="w-4 h-4" />, label: 'Community' },
+                  { icon: <AtSign className="w-4 h-4" />, label: 'Instagram' },
+                  { icon: <Share2 className="w-4 h-4" />, label: 'Share' },
+                  { icon: <Video className="w-4 h-4" />, label: 'YouTube' },
                 ].map((s) => (
                   <a
                     key={s.label}
-                    href={s.href}
+                    href="#"
                     aria-label={s.label}
-                    className="w-8 h-8 rounded-md bg-white/5 hover:bg-netflix-red text-netflix-light-grey hover:text-white flex items-center justify-center transition-all duration-200"
+                    className="w-9 h-9 rounded bg-white/5 hover:bg-netflix-red text-netflix-light-grey hover:text-white flex items-center justify-center transition-all duration-200"
                   >
                     {s.icon}
                   </a>
@@ -398,39 +336,39 @@ export function App() {
               </div>
             </div>
 
-            {/* Discover Column */}
+            {/* Discover */}
             <div className="space-y-4">
-              <h4 className="text-netflix-white font-bold text-sm uppercase tracking-widest">Discover</h4>
+              <h4 className="text-white font-bold text-xs uppercase tracking-widest">Discover</h4>
               <ul className="space-y-2.5 text-xs">
-                {['Concerts & Music', 'Sports & Gaming', 'Comedy & Standup', 'Theatre & Arts', 'Tech Conferences', 'Festival Passes'].map((link) => (
-                  <li key={link}>
-                    <a href="#" className="flex items-center gap-1.5 text-netflix-light-grey hover:text-netflix-white transition-colors group">
-                      <ChevronRight className="w-3 h-3 text-netflix-red opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {link}
+                {['Concerts & Music', 'Sports & Gaming', 'Comedy & Standup', 'Theatre & Arts', 'Tech Conferences', 'Festival Passes'].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="flex items-center gap-1.5 text-netflix-light-grey hover:text-white transition-colors group">
+                      <ChevronRight className="w-3 h-3 text-netflix-red opacity-0 group-hover:opacity-100 -ml-1 transition-opacity" />
+                      {item}
                     </a>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Company Column */}
+            {/* Company */}
             <div className="space-y-4">
-              <h4 className="text-netflix-white font-bold text-sm uppercase tracking-widest">Company</h4>
+              <h4 className="text-white font-bold text-xs uppercase tracking-widest">Company</h4>
               <ul className="space-y-2.5 text-xs">
-                {['About TickIt', 'Careers', 'Press & Media', 'Partner with Us', 'Corporate Tickets', 'Investor Relations'].map((link) => (
-                  <li key={link}>
-                    <a href="#" className="flex items-center gap-1.5 text-netflix-light-grey hover:text-netflix-white transition-colors group">
-                      <ChevronRight className="w-3 h-3 text-netflix-red opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {link}
+                {['About TickIt', 'Careers', 'Press & Media', 'Partner With Us', 'Corporate Tickets', 'Investor Relations'].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="flex items-center gap-1.5 text-netflix-light-grey hover:text-white transition-colors group">
+                      <ChevronRight className="w-3 h-3 text-netflix-red opacity-0 group-hover:opacity-100 -ml-1 transition-opacity" />
+                      {item}
                     </a>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Contact Column */}
+            {/* Support */}
             <div className="space-y-4">
-              <h4 className="text-netflix-white font-bold text-sm uppercase tracking-widest">Support</h4>
+              <h4 className="text-white font-bold text-xs uppercase tracking-widest">Support</h4>
               <ul className="space-y-3 text-xs">
                 {[
                   { icon: <Mail className="w-3.5 h-3.5 text-netflix-red shrink-0" />, text: 'support@tickit.io' },
@@ -438,60 +376,42 @@ export function App() {
                   { icon: <MapPin className="w-3.5 h-3.5 text-netflix-red shrink-0" />, text: 'San Francisco, CA 94103' },
                   { icon: <Globe className="w-3.5 h-3.5 text-netflix-red shrink-0" />, text: 'Available Worldwide' },
                 ].map((item) => (
-                  <li key={item.text} className="flex items-center gap-2 text-netflix-light-grey">
+                  <li key={item.text} className="flex items-center gap-2">
                     {item.icon}
-                    <span>{item.text}</span>
+                    <span className="text-netflix-light-grey">{item.text}</span>
                   </li>
                 ))}
               </ul>
-              <div className="pt-2 space-y-2 text-xs">
-                <a href="#" className="flex items-center gap-1.5 text-netflix-light-grey hover:text-netflix-white transition-colors group">
-                  <ChevronRight className="w-3 h-3 text-netflix-red opacity-0 group-hover:opacity-100 transition-opacity" />Help Center
-                </a>
-                <a href="#" className="flex items-center gap-1.5 text-netflix-light-grey hover:text-netflix-white transition-colors group">
-                  <ChevronRight className="w-3 h-3 text-netflix-red opacity-0 group-hover:opacity-100 transition-opacity" />Refund Policy
-                </a>
-              </div>
+              <ul className="space-y-2 text-xs mt-3">
+                {['Help Center & FAQ', 'Refund Policy', 'Accessibility'].map((item) => (
+                  <li key={item}>
+                    <a href="#" className="flex items-center gap-1.5 text-netflix-light-grey hover:text-white transition-colors group">
+                      <ChevronRight className="w-3 h-3 text-netflix-red opacity-0 group-hover:opacity-100 -ml-1 transition-opacity" />
+                      {item}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          {/* Bottom Bar */}
-          <div className="mt-10 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-netflix-light-grey/60">
-            <div>© 2026 TickIt Inc. All Rights Reserved.</div>
-            <div className="flex flex-wrap justify-center sm:justify-end gap-4">
-              <a href="#" className="hover:text-netflix-light-grey transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-netflix-light-grey transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-netflix-light-grey transition-colors">Cookie Preferences</a>
-              <a href="#" className="hover:text-netflix-light-grey transition-colors">Accessibility</a>
+          {/* Bottom bar */}
+          <div className="mt-10 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-netflix-light-grey/50">
+            <span>© 2026 TickIt Inc. All Rights Reserved.</span>
+            <div className="flex flex-wrap justify-center gap-4">
+              {['Privacy Policy', 'Terms of Service', 'Cookie Preferences'].map((item) => (
+                <a key={item} href="#" className="hover:text-netflix-light-grey transition-colors">{item}</a>
+              ))}
             </div>
           </div>
         </div>
       </footer>
 
-      {/* ── Modals & Drawers ─────────────────────────── */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onLoginSuccess={(user) => setCurrentUser(user)}
-      />
-      <EventModal
-        event={selectedEventModal}
-        currentUser={currentUser}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        onClose={() => setSelectedEventModal(null)}
-        onConfirmPurchase={handleConfirmPurchase}
-      />
-      <TrailerModal
-        event={trailerEventModal}
-        onClose={() => setTrailerEventModal(null)}
-        onGetTickets={(e) => setSelectedEventModal(e)}
-      />
-      <MyTicketsDrawer
-        isOpen={isTicketsDrawerOpen}
-        onClose={() => setIsTicketsDrawerOpen(false)}
-        tickets={purchasedTickets}
-        onRemoveTicket={handleRemoveTicket}
-      />
+      {/* Modals & Drawers */}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} onLoginSuccess={setCurrentUser} />
+      <EventModal event={selectedEventModal} currentUser={currentUser} onOpenAuthModal={() => setIsAuthModalOpen(true)} onClose={() => setSelectedEventModal(null)} onConfirmPurchase={handleConfirmPurchase} />
+      <TrailerModal event={trailerEventModal} onClose={() => setTrailerEventModal(null)} onGetTickets={setSelectedEventModal} />
+      <MyTicketsDrawer isOpen={isTicketsDrawerOpen} onClose={() => setIsTicketsDrawerOpen(false)} tickets={purchasedTickets} onRemoveTicket={handleRemoveTicket} />
     </div>
   );
 }

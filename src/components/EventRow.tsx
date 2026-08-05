@@ -24,48 +24,44 @@ export const EventRow: React.FC<EventRowProps> = ({
 }) => {
   const rowRef = useRef<HTMLDivElement>(null);
 
-  const handleScroll = (direction: 'left' | 'right') => {
-    if (rowRef.current) {
-      const { scrollLeft, clientWidth } = rowRef.current;
-      const scrollAmount = clientWidth * 0.75;
-      rowRef.current.scrollTo({
-        left: direction === 'left' ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
-        behavior: 'smooth',
-      });
-    }
+  const scroll = (dir: 'left' | 'right') => {
+    if (!rowRef.current) return;
+    const amount = rowRef.current.clientWidth * 0.75;
+    rowRef.current.scrollBy({ left: dir === 'right' ? amount : -amount, behavior: 'smooth' });
   };
 
   return (
-    <div className="space-y-3 py-4 group/row">
-      {/* Row Header */}
+    <div className="space-y-2 py-2 group/row">
+      {/* Row header */}
       <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8">
-        <h2 className="text-lg sm:text-xl font-bold tracking-tight text-netflix-white flex items-center gap-2">
-          <span className="w-1 h-5 bg-netflix-red rounded-full inline-block" />
+        <h2 className="text-base sm:text-lg lg:text-xl font-bold text-white flex items-center gap-2">
+          <span className="w-1 h-5 bg-netflix-red rounded-full shrink-0 inline-block" />
           {title}
         </h2>
-        <span className="text-xs text-netflix-light-grey hover:text-netflix-red transition-colors cursor-pointer font-medium">
-          See All &rarr;
-        </span>
+        <button className="text-xs text-netflix-light-grey hover:text-netflix-red transition-colors font-medium whitespace-nowrap">
+          See All →
+        </button>
       </div>
 
-      {/* Row Carousel Container */}
+      {/* Carousel */}
       <div className="relative px-4 sm:px-6 lg:px-8">
-        {/* Scroll Left Arrow */}
+        {/* Left arrow */}
         <button
-          onClick={() => handleScroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-40 bg-netflix-black/80 hover:bg-netflix-red text-netflix-white p-2 rounded-r-md opacity-0 group-hover/row:opacity-100 transition-all duration-200 focus:outline-none backdrop-blur-sm"
-          aria-label="Scroll Left"
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-40 bg-black/80 hover:bg-netflix-red text-white p-2 rounded-r
+            opacity-0 group-hover/row:opacity-100 transition-all duration-200 focus:outline-none backdrop-blur-sm"
+          aria-label="Scroll left"
         >
-          <ChevronLeft className="w-6 h-6" />
+          <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
-        {/* Scrollable Events Row */}
+        {/* Scrollable row */}
         <div
           ref={rowRef}
-          className="flex items-stretch space-x-3 sm:space-x-4 overflow-x-auto no-scrollbar py-3 scroll-smooth"
+          className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar py-2 scroll-smooth"
         >
           {events.map((event) => (
-            <div key={event.id} className="flex-none w-52 sm:w-64 md:w-72">
+            <div key={event.id} className="flex-none w-[180px] xs:w-[210px] sm:w-[240px] md:w-[260px] lg:w-[280px]">
               <EventCard
                 event={event}
                 isBookmarked={bookmarkedIds.has(event.id)}
@@ -78,13 +74,14 @@ export const EventRow: React.FC<EventRowProps> = ({
           ))}
         </div>
 
-        {/* Scroll Right Arrow */}
+        {/* Right arrow */}
         <button
-          onClick={() => handleScroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-40 bg-netflix-black/80 hover:bg-netflix-red text-netflix-white p-2 rounded-l-md opacity-0 group-hover/row:opacity-100 transition-all duration-200 focus:outline-none backdrop-blur-sm"
-          aria-label="Scroll Right"
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-40 bg-black/80 hover:bg-netflix-red text-white p-2 rounded-l
+            opacity-0 group-hover/row:opacity-100 transition-all duration-200 focus:outline-none backdrop-blur-sm"
+          aria-label="Scroll right"
         >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       </div>
     </div>

@@ -30,24 +30,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 40) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
+    const handleScroll = () => setIsScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (onSearchChange) {
-      onSearchChange(searchQuery);
-    }
-  };
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!showUserDropdown) return;
+    const handler = () => setShowUserDropdown(false);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [showUserDropdown]);
 
   const navLinks = [
     { id: 'all', label: 'Home' },
@@ -61,46 +55,51 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-netflix-dark-grey/95 backdrop-blur-md shadow-lg border-b border-netflix-light-grey/10'
-          : 'bg-gradient-to-b from-netflix-black/90 via-netflix-black/60 to-transparent'
+          ? 'bg-netflix-dark-grey/98 backdrop-blur-md shadow-lg border-b border-white/5'
+          : 'bg-gradient-to-b from-black/90 via-black/50 to-transparent'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
-        {/* Left Side: Logo & Main Navigation Links */}
-        <div className="flex items-center space-x-6 lg:space-x-10">
+      {/* Main bar — 64px on mobile, 72px on sm+ */}
+      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-[72px] flex items-center justify-between gap-3">
+
+        {/* ── Left: Logo + desktop nav ── */}
+        <div className="flex items-center gap-6 lg:gap-10 min-w-0">
           {/* Logo */}
           <button
-            onClick={() => onSelectCategory('all')}
-            className="flex items-center space-x-2 group focus:outline-none cursor-pointer"
+            onClick={() => { onSelectCategory('all'); setMobileMenuOpen(false); }}
+            className="flex items-center gap-2 shrink-0 focus:outline-none cursor-pointer"
           >
-            <div className="bg-netflix-red text-netflix-white p-1.5 rounded-md flex items-center justify-center font-black tracking-tighter text-xl">
-              <Ticket className="w-5 h-5 fill-netflix-white text-netflix-red" />
+            <div className="bg-netflix-red p-1.5 rounded flex items-center justify-center">
+              <Ticket className="w-4 h-4 fill-white text-netflix-red" />
             </div>
-            <span className="text-2xl font-extrabold tracking-tight text-netflix-red uppercase font-sans">
-              TICK<span className="text-netflix-white">IT</span>
+            <span className="text-xl font-black tracking-tight text-netflix-red uppercase leading-none">
+              TICK<span className="text-white">IT</span>
             </span>
           </button>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center space-x-6">
+          {/* Desktop nav links */}
+          <nav className="hidden md:flex items-center gap-5 lg:gap-7">
             {navLinks.map((link) => {
-              const isActive = selectedCategory === link.id;
+              const active = selectedCategory === link.id;
               return (
                 <button
                   key={link.id}
                   onClick={() => onSelectCategory(link.id)}
-                  className={`text-sm font-medium transition-colors duration-200 flex items-center space-x-1 cursor-pointer ${
-                    isActive
-                      ? 'text-netflix-white font-bold border-b-2 border-netflix-red pb-1'
-                      : 'text-netflix-light-grey hover:text-netflix-white'
+                  className={`relative text-sm font-medium transition-colors duration-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                    active ? 'text-white font-bold' : 'text-netflix-light-grey hover:text-white'
                   }`}
                 >
-                  {link.id === 'mylist' && <Heart className="w-3.5 h-3.5 fill-current text-netflix-red" />}
-                  <span>{link.label}</span>
+                  {link.id === 'mylist' && (
+                    <Heart className="w-3.5 h-3.5 fill-netflix-red text-netflix-red" />
+                  )}
+                  {link.label}
+                  {active && (
+                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-netflix-red rounded-full" />
+                  )}
                   {link.count !== undefined && link.count > 0 && (
-                    <span className="bg-netflix-red text-netflix-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+                    <span className="bg-netflix-red text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center leading-none">
                       {link.count}
                     </span>
                   )}
@@ -110,102 +109,96 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
         </div>
 
-        {/* Right Side: Search, Notifications, Profile, My Tickets CTA */}
-        <div className="flex items-center space-x-3 sm:space-x-5">
-          {/* Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+        {/* ── Right: Actions ── */}
+        <div className="flex items-center gap-2 sm:gap-3">
+
+          {/* Search */}
+          <div className="flex items-center">
             {showSearchInput ? (
-              <div className="relative flex items-center">
+              <div className="flex items-center relative animate-fadeIn">
+                <Search className="w-4 h-4 text-netflix-light-grey absolute left-2.5 z-10 pointer-events-none" />
                 <input
+                  autoFocus
                   type="text"
-                  placeholder="Search events, artists, venues..."
+                  placeholder="Search events…"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    if (onSearchChange) onSearchChange(e.target.value);
+                    onSearchChange?.(e.target.value);
                   }}
-                  className="bg-netflix-dark-grey text-netflix-white text-xs sm:text-sm pl-9 pr-8 py-1.5 rounded-md border border-netflix-light-grey/30 focus:border-netflix-red focus:outline-none w-44 sm:w-64 transition-all duration-300"
-                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setShowSearchInput(false);
+                      setSearchQuery('');
+                      onSearchChange?.('');
+                    }
+                  }}
+                  className="bg-netflix-black text-white text-sm pl-8 pr-8 py-1.5 rounded border border-white/20 focus:border-netflix-red focus:outline-none w-40 sm:w-56 transition-all"
                 />
-                <Search className="w-4 h-4 text-netflix-light-grey absolute left-2.5" />
                 <button
-                  type="button"
-                  onClick={() => {
-                    setShowSearchInput(false);
-                    setSearchQuery('');
-                    if (onSearchChange) onSearchChange('');
-                  }}
-                  className="absolute right-2 text-netflix-light-grey hover:text-netflix-white"
+                  onClick={() => { setShowSearchInput(false); setSearchQuery(''); onSearchChange?.(''); }}
+                  className="absolute right-2 text-netflix-light-grey hover:text-white"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
               <button
-                type="button"
                 onClick={() => setShowSearchInput(true)}
-                className="p-2 text-netflix-light-grey hover:text-netflix-white transition-colors duration-200"
-                title="Search"
+                className="p-2 text-netflix-light-grey hover:text-white transition-colors"
+                aria-label="Search"
               >
                 <Search className="w-5 h-5" />
               </button>
             )}
-          </form>
+          </div>
 
-          {/* Notifications Bell */}
-          <div className="relative hidden sm:block">
-            <button
-              className="p-2 text-netflix-light-grey hover:text-netflix-white transition-colors duration-200 relative"
-              title="Notifications"
-            >
+          {/* Notifications — hidden on very small screens */}
+          <div className="hidden sm:block relative">
+            <button className="p-2 text-netflix-light-grey hover:text-white transition-colors relative" aria-label="Notifications">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-netflix-red rounded-full ring-2 ring-netflix-dark-grey animate-pulse"></span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-netflix-red rounded-full ring-2 ring-netflix-dark-grey animate-pulse" />
             </button>
           </div>
 
-          {/* My Tickets Button */}
+          {/* My Tickets */}
           <button
             onClick={onOpenMyTickets}
-            className="flex items-center space-x-2 bg-netflix-red hover:bg-netflix-red/90 text-netflix-white text-xs sm:text-sm font-semibold px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-md transition-transform duration-200 active:scale-95 shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 bg-netflix-red hover:bg-red-700 text-white text-xs sm:text-sm font-semibold px-3 py-1.5 sm:px-4 sm:py-2 rounded transition-all duration-200 active:scale-95 cursor-pointer whitespace-nowrap"
           >
             <Ticket className="w-4 h-4" />
-            <span className="hidden xs:inline">My Tickets</span>
+            <span>My Tickets</span>
           </button>
 
-          {/* User Profile Avatar / Sign In */}
+          {/* Profile */}
           {currentUser ? (
-            <div className="relative">
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
               <button
-                onClick={() => setShowUserDropdown(!showUserDropdown)}
-                className="flex items-center space-x-2 focus:outline-none cursor-pointer"
+                onClick={() => setShowUserDropdown((v) => !v)}
+                className="focus:outline-none cursor-pointer"
+                aria-label="Account menu"
               >
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
-                  className="w-8 h-8 rounded-md object-cover ring-2 ring-netflix-red"
+                  className="w-8 h-8 rounded object-cover ring-2 ring-netflix-red hover:ring-red-400 transition-all"
                 />
               </button>
-
-              {/* User Dropdown */}
               {showUserDropdown && (
-                <div className="absolute right-0 mt-2 w-56 bg-netflix-dark-grey border border-netflix-light-grey/20 rounded-md shadow-2xl py-2 z-50 text-xs space-y-2 animate-fadeIn">
-                  <div className="px-4 py-2 border-b border-netflix-light-grey/10">
-                    <div className="font-bold text-netflix-white line-clamp-1">{currentUser.name}</div>
-                    <div className="text-[10px] text-netflix-light-grey line-clamp-1">{currentUser.email}</div>
-                    <div className="mt-1 text-[9px] bg-netflix-red/20 text-netflix-red border border-netflix-red/30 px-1.5 py-0.2 rounded inline-block font-semibold">
-                      Via {currentUser.provider}
-                    </div>
+                <div className="absolute right-0 top-full mt-2 w-56 bg-netflix-dark-grey border border-white/10 rounded shadow-2xl py-1.5 z-50 animate-fadeIn">
+                  <div className="px-4 py-3 border-b border-white/10">
+                    <div className="font-semibold text-white text-sm truncate">{currentUser.name}</div>
+                    <div className="text-[11px] text-netflix-light-grey mt-0.5 truncate">{currentUser.email}</div>
+                    <span className="mt-1.5 inline-block text-[10px] bg-netflix-red/20 text-netflix-red border border-netflix-red/30 px-1.5 py-0.5 rounded font-semibold">
+                      via {currentUser.provider}
+                    </span>
                   </div>
-
                   <button
-                    onClick={() => {
-                      onLogout();
-                      setShowUserDropdown(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-netflix-light-grey hover:text-netflix-red hover:bg-white/5 flex items-center space-x-2 transition-colors font-semibold"
+                    onClick={() => { onLogout(); setShowUserDropdown(false); }}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-netflix-light-grey hover:text-white hover:bg-white/5 transition-colors"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Sign Out</span>
+                    <LogOut className="w-4 h-4" />
+                    Sign Out
                   </button>
                 </div>
               )}
@@ -213,42 +206,50 @@ export const Navbar: React.FC<NavbarProps> = ({
           ) : (
             <button
               onClick={onOpenAuthModal}
-              className="bg-netflix-dark-grey hover:bg-netflix-black text-netflix-white border border-netflix-light-grey/20 hover:border-netflix-red text-xs font-bold px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center space-x-1.5"
+              className="flex items-center gap-1.5 bg-netflix-dark-grey hover:bg-netflix-black text-white border border-white/15 hover:border-netflix-red text-xs sm:text-sm font-semibold px-3 py-1.5 rounded transition-all cursor-pointer whitespace-nowrap"
             >
               <User className="w-3.5 h-3.5 text-netflix-red" />
-              <span>Sign In</span>
+              Sign In
             </button>
           )}
 
-          {/* Mobile Menu Toggle Button */}
+          {/* Hamburger — mobile only */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-netflix-light-grey hover:text-netflix-white"
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            className="md:hidden p-2 text-netflix-light-grey hover:text-white transition-colors"
+            aria-label="Menu"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
+      {/* ── Mobile drawer ── */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-netflix-dark-grey border-t border-netflix-light-grey/10 px-4 py-4 space-y-3 animate-fadeIn">
-          {navLinks.map((link) => (
-            <button
-              key={link.id}
-              onClick={() => {
-                onSelectCategory(link.id);
-                setMobileMenuOpen(false);
-              }}
-              className={`block w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                selectedCategory === link.id
-                  ? 'bg-netflix-red/20 text-netflix-red font-bold'
-                  : 'text-netflix-light-grey hover:text-netflix-white hover:bg-white/5'
-              }`}
-            >
-              {link.label} {link.count !== undefined && link.count > 0 ? `(${link.count})` : ''}
-            </button>
-          ))}
+        <div className="md:hidden bg-netflix-dark-grey border-t border-white/10 animate-fadeIn">
+          <nav className="px-4 py-3 space-y-1">
+            {navLinks.map((link) => (
+              <button
+                key={link.id}
+                onClick={() => { onSelectCategory(link.id); setMobileMenuOpen(false); }}
+                className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded text-sm font-medium transition-colors ${
+                  selectedCategory === link.id
+                    ? 'bg-netflix-red/15 text-white border-l-2 border-netflix-red pl-4'
+                    : 'text-netflix-light-grey hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  {link.id === 'mylist' && <Heart className="w-4 h-4 fill-netflix-red text-netflix-red" />}
+                  {link.label}
+                </span>
+                {link.count !== undefined && link.count > 0 && (
+                  <span className="bg-netflix-red text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                    {link.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </nav>
         </div>
       )}
     </header>
