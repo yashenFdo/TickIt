@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, MapPin, Ticket, ShieldCheck, CheckCircle2, Sparkles, Star, ThumbsUp, MessageSquare, Zap } from 'lucide-react';
+import { X, Calendar, MapPin, Ticket, ShieldCheck, CheckCircle2, Sparkles, Star, ThumbsUp, MessageSquare, Zap, Users, Award, Info } from 'lucide-react';
 import type { EventItem } from '../data/events';
 import { SeatPicker } from './SeatPicker';
 import type { SelectedSeat } from './SeatPicker';
@@ -160,7 +160,7 @@ export const EventModal: React.FC<EventModalProps> = ({
               }`}
             >
               <Ticket className="w-4 h-4 text-netflix-red" />
-              <span className="uppercase text-[11px]">Express Ticket Booking</span>
+              <span className="uppercase text-[11px]">Event Details & Booking</span>
             </button>
 
             <button
@@ -337,6 +337,63 @@ export const EventModal: React.FC<EventModalProps> = ({
 
             {/* Modal Body Container */}
             <div className="p-5 sm:p-7 space-y-6">
+              {/* Event Description Section */}
+              <div className="bg-netflix-black p-4 rounded-md border border-white/5 space-y-2">
+                <div className="flex items-center space-x-2 text-netflix-white font-bold text-xs">
+                  <Info className="w-4 h-4 text-netflix-red" />
+                  <span>About This Event</span>
+                </div>
+                <p className="text-xs text-netflix-light-grey leading-relaxed">
+                  {event.fullDescription || event.description}
+                </p>
+              </div>
+
+              {/* Guest Speakers & Resource Persons Section */}
+              {event.speakers && event.speakers.length > 0 && (
+                <div className="space-y-3 bg-netflix-black p-4 rounded-md border border-white/5">
+                  <div className="flex items-center space-x-2 text-netflix-white font-bold text-xs">
+                    <Users className="w-4 h-4 text-netflix-red" />
+                    <span>Guest Speakers & Keynote Performers</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {event.speakers.map((sp) => (
+                      <div key={sp.name} className="flex items-center space-x-2.5 bg-netflix-dark-grey p-2.5 rounded-md border border-white/5">
+                        <img
+                          src={sp.avatar}
+                          alt={sp.name}
+                          className="w-9 h-9 rounded-full object-cover ring-2 ring-netflix-red/50"
+                        />
+                        <div className="text-xs">
+                          <div className="font-bold text-netflix-white">{sp.name}</div>
+                          <div className="text-[10px] text-netflix-light-grey line-clamp-1">{sp.role}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Official Event Sponsors Section */}
+              {event.sponsors && event.sponsors.length > 0 && (
+                <div className="space-y-2 bg-netflix-black p-4 rounded-md border border-white/5">
+                  <div className="flex items-center space-x-2 text-netflix-white font-bold text-xs">
+                    <Award className="w-4 h-4 text-netflix-red" />
+                    <span>Official Event Sponsors & Partners</span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {event.sponsors.map((sp) => (
+                      <span key={sp.name} className="bg-netflix-dark-grey text-netflix-white border border-white/10 px-3 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-netflix-red" />
+                        <span>{sp.name}</span>
+                        <span className="text-[9px] text-netflix-light-grey">({sp.tier})</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Mode Switcher */}
               <div className="flex items-center justify-between bg-netflix-black p-1 rounded-md border border-white/10 text-xs font-bold">
                 <button

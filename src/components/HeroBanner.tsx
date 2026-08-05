@@ -1,5 +1,5 @@
 import React from 'react';
-import { Ticket, Info, Calendar, MapPin, Sparkles, Clock, Play, Heart, Flame } from 'lucide-react';
+import { Ticket, Info, Calendar, MapPin, Sparkles, Clock, Play, Heart, Flame, Users, Award } from 'lucide-react';
 import type { EventItem } from '../data/events';
 import { CountdownTicker } from './CountdownTicker';
 
@@ -21,7 +21,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   onToggleBookmark,
 }) => {
   return (
-    <div className="relative w-full h-[80vh] min-h-[540px] max-h-[750px] overflow-hidden bg-netflix-black select-none">
+    <div className="relative w-full h-[82vh] min-h-[560px] max-h-[780px] overflow-hidden bg-netflix-black select-none">
       {/* Background Image with Cinematic Gradient Masking */}
       <div className="absolute inset-0">
         <img
@@ -96,6 +96,36 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
             </div>
           </div>
 
+          {/* Speakers Pill Bar */}
+          {event.speakers && event.speakers.length > 0 && (
+            <div className="flex items-center space-x-2 text-xs text-netflix-light-grey">
+              <Users className="w-4 h-4 text-netflix-red shrink-0" />
+              <span className="font-semibold text-netflix-white">Speakers:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {event.speakers.map((sp) => (
+                  <span key={sp.name} className="bg-netflix-dark-grey/90 text-netflix-white text-[11px] px-2 py-0.5 rounded border border-white/10">
+                    {sp.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Official Sponsors Badge Bar */}
+          {event.sponsors && event.sponsors.length > 0 && (
+            <div className="flex items-center space-x-2 text-xs text-netflix-light-grey">
+              <Award className="w-4 h-4 text-netflix-red shrink-0" />
+              <span className="font-semibold text-netflix-white">Sponsors:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {event.sponsors.map((sp) => (
+                  <span key={sp.name} className="bg-netflix-dark-grey/90 text-netflix-light-grey text-[10px] px-2 py-0.5 rounded border border-white/10">
+                    {sp.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Description */}
           <p className="text-xs sm:text-sm text-netflix-light-grey line-clamp-2 sm:line-clamp-3 leading-relaxed max-w-xl">
             {event.description}
@@ -144,7 +174,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
               className="flex items-center space-x-2 bg-netflix-dark-grey/90 hover:bg-netflix-dark-grey text-netflix-white text-sm sm:text-base font-semibold px-5 py-3 rounded-md transition-all duration-200 border border-netflix-light-grey/20 hover:border-netflix-light-grey/50 active:scale-95 cursor-pointer"
             >
               <Info className="w-5 h-5 text-netflix-light-grey" />
-              <span>More Info</span>
+              <span>Speakers & Info</span>
             </button>
           </div>
         </div>
