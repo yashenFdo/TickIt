@@ -11,6 +11,7 @@ interface NavbarProps {
   currentUser: UserProfile | null;
   onLogout: () => void;
   bookmarkCount?: number;
+  onSelectEvent?: (eventId: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -22,6 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onLogout,
   bookmarkCount = 0,
+  onSelectEvent,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -178,7 +180,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <button className="text-[10px] text-netflix-light-grey hover:text-white">Mark all as read</button>
                 </div>
                 <div className="max-h-80 overflow-y-auto">
-                  <div className="px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer flex gap-3">
+                  <div 
+                    onClick={() => onSelectEvent?.('live-1')}
+                    className="px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer flex gap-3"
+                  >
                     <div className="w-2 h-2 mt-1.5 rounded-full bg-netflix-red shrink-0" />
                     <div>
                       <div className="text-xs font-bold text-white mb-0.5">Tickets for THE WEEKND just dropped!</div>
@@ -186,7 +191,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <div className="text-[10px] text-white/40 mt-1">2 mins ago</div>
                     </div>
                   </div>
-                  <div className="px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer flex gap-3 opacity-75">
+                  <div 
+                    onClick={() => onSelectEvent?.('wk-3')}
+                    className="px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer flex gap-3 opacity-75"
+                  >
                     <div className="w-2 h-2 mt-1.5 rounded-full bg-transparent border border-white/20 shrink-0" />
                     <div>
                       <div className="text-xs font-bold text-white mb-0.5">Price Drop Alert: F1 Las Vegas</div>

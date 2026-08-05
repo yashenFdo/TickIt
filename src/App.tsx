@@ -12,7 +12,7 @@ import type { PurchasedTicket } from './components/MyTicketsDrawer';
 import { FilterBar } from './components/FilterBar';
 import type { FilterState } from './components/FilterBar';
 import { HomeFeed } from './components/HomeFeed';
-import { FEATURED_EVENT, EVENTS_BY_CATEGORY, EVENT_CATEGORIES } from './data/events';
+import { FEATURED_EVENT, EVENTS_BY_CATEGORY, EVENT_CATEGORIES, SPOTLIGHT_EVENTS } from './data/events';
 import type { EventItem } from './data/events';
 import type { SelectedSeat } from './components/SeatPicker';
 import { Sparkles, Film, Ticket, ShieldCheck, Zap, Heart, Mail, Phone, MapPin, Globe, ChevronRight, MessageCircle, AtSign, Share2, Video } from 'lucide-react';
@@ -159,6 +159,10 @@ export function App() {
         currentUser={currentUser}
         onLogout={() => setCurrentUser(null)}
         bookmarkCount={bookmarkedIds.size}
+        onSelectEvent={(eventId) => {
+          const ev = allEventsList.find(e => e.id === eventId) || SPOTLIGHT_EVENTS.find(e => e.id === eventId);
+          if (ev) setSelectedEventModal(ev);
+        }}
       />
 
       {/* Main content — no top padding here; hero handles its own spacing */}
