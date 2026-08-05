@@ -13,7 +13,8 @@ import { FilterBar } from './components/FilterBar';
 import type { FilterState } from './components/FilterBar';
 import { FEATURED_EVENT, EVENTS_BY_CATEGORY, EVENT_CATEGORIES } from './data/events';
 import type { EventItem } from './data/events';
-import { Film, ShieldCheck, Heart, Crown, PhoneCall } from 'lucide-react';
+import type { SelectedSeat } from './components/SeatPicker';
+import { Sparkles, Film, Ticket, ShieldCheck, Zap, Heart } from 'lucide-react';
 
 export function App() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -33,7 +34,7 @@ export function App() {
 
   // Bookmarking / Favorites State
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(
-    new Set(['feat-1', 'tr-1', 'tr-2'])
+    new Set(['feat-1', 'tr-1', 'rec-1'])
   );
 
   const handleToggleBookmark = (event: EventItem) => {
@@ -58,12 +59,12 @@ export function App() {
 
   const [purchasedTickets, setPurchasedTickets] = useState<PurchasedTicket[]>([
     {
-      id: 'TK-992104',
-      event: FEATURED_EVENT,
-      tier: 'Royal Paddock Suite & Concierge',
-      quantity: 1,
-      totalPrice: 12500,
-      purchaseDate: '2026-08-05',
+      id: 'TK-882194',
+      event: EVENTS_BY_CATEGORY['Trending Now'][0],
+      tier: 'VIP Front Row (VIP-1-2)',
+      quantity: 2,
+      totalPrice: 190,
+      purchaseDate: '2026-08-04',
       customerName: 'Yashen Fernando',
     },
   ]);
@@ -122,6 +123,12 @@ export function App() {
       result = result.filter((e) => e.date.includes('SAT') || e.date.includes('SUN'));
     }
 
+    // Max Price filter
+    result = result.filter((e) => {
+      const priceNum = parseInt(e.price.replace(/[^0-9]/g, '')) || 50;
+      return priceNum <= filters.maxPrice;
+    });
+
     // Sorting Order
     result.sort((a, b) => {
       if (filters.sortBy === 'match') {
@@ -148,7 +155,7 @@ export function App() {
     tier: string;
     quantity: number;
     totalPrice: number;
-    seats: any[];
+    seats: SelectedSeat[];
     customerName: string;
   }) => {
     const newTicket: PurchasedTicket = {
@@ -176,7 +183,7 @@ export function App() {
     filters.maxPrice < 600;
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B] text-white font-sans selection:bg-[#C5A059] selection:text-[#0B0B0B] flex flex-col justify-between">
+    <div className="min-h-screen bg-netflix-black text-netflix-white font-sans selection:bg-netflix-red selection:text-white flex flex-col justify-between">
       {/* Top Fixed Navbar */}
       <Navbar
         selectedCategory={selectedCategory}
@@ -213,18 +220,18 @@ export function App() {
               }}
             />
 
-            <div className="flex items-center justify-between border-b border-[#C5A059]/20 pb-4">
+            <div className="flex items-center justify-between border-b border-netflix-light-grey/10 pb-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2 font-serif">
-                  {selectedCategory === 'mylist' && <Heart className="w-6 h-6 fill-[#C5A059] text-[#C5A059]" />}
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-netflix-white tracking-tight flex items-center gap-2">
+                  {selectedCategory === 'mylist' && <Heart className="w-6 h-6 fill-netflix-red text-netflix-red" />}
                   {selectedCategory === 'mylist'
-                    ? 'Saved VIP Collection'
+                    ? 'My Saved List & Bookmarked Events'
                     : searchQuery
-                    ? `VIP Search Results for "${searchQuery}"`
-                    : `Curated VIP Event Catalog`}
+                    ? `Search Results for "${searchQuery}"`
+                    : `Explore Live Events`}
                 </h1>
-                <p className="text-xs text-[#A0A0A0] mt-1">
-                  Showing {filteredEvents.length} exclusive events matching your criteria
+                <p className="text-xs text-netflix-light-grey mt-1">
+                  Showing {filteredEvents.length} events matching your selection
                 </p>
               </div>
 
@@ -239,22 +246,22 @@ export function App() {
                     sortBy: 'match',
                   });
                 }}
-                className="bg-[#161616] hover:bg-[#C5A059] hover:text-[#0B0B0B] text-white text-xs font-bold px-3.5 py-2 rounded-md transition-colors border border-[#C5A059]/30 uppercase tracking-wider"
+                className="bg-netflix-dark-grey hover:bg-netflix-red text-netflix-white text-xs font-semibold px-3.5 py-2 rounded-md transition-colors"
               >
-                Reset Filters
+                Reset All Filters
               </button>
             </div>
 
             {filteredEvents.length === 0 ? (
-              <div className="text-center py-20 bg-[#161616] rounded-md space-y-3 border border-white/5">
-                <Film className="w-12 h-12 text-[#A0A0A0]/40 mx-auto" />
-                <h2 className="text-lg font-bold text-white font-serif">
-                  {selectedCategory === 'mylist' ? 'Your Saved VIP Collection is Empty' : 'No Matching VIP Events Found'}
+              <div className="text-center py-20 bg-netflix-dark-grey rounded-md space-y-3">
+                <Film className="w-12 h-12 text-netflix-light-grey/40 mx-auto" />
+                <h2 className="text-lg font-bold text-netflix-white">
+                  {selectedCategory === 'mylist' ? 'Your Saved List is Empty' : 'No Matching Events Found'}
                 </h2>
-                <p className="text-xs text-[#A0A0A0] max-w-xs mx-auto">
+                <p className="text-xs text-netflix-light-grey max-w-xs mx-auto">
                   {selectedCategory === 'mylist'
-                    ? 'Click the heart icon on any event card to save royal passes to your collection!'
-                    : 'Try adjusting your location filters or reset the view.'}
+                    ? 'Click the heart icon on any event card to save shows and concerts to your list!'
+                    : 'Try adjusting your price range slider or clearing city filters.'}
                 </p>
               </div>
             ) : (
@@ -275,7 +282,7 @@ export function App() {
             )}
           </div>
         ) : (
-          /* Default Classic VIP Aesthetic Home Dashboard */
+          /* Default Netflix Aesthetic Home Dashboard */
           <>
             {/* Featured Billboard Hero */}
             <HeroBanner
@@ -303,7 +310,7 @@ export function App() {
               />
             </div>
 
-            {/* Horizontal VIP Rows Container */}
+            {/* Horizontal Netflix Rows Container */}
             <div className="relative z-30 mt-4 space-y-4">
               {Object.entries(EVENTS_BY_CATEGORY).map(([categoryTitle, eventsList]) => (
                 <EventRow
@@ -319,41 +326,41 @@ export function App() {
               ))}
             </div>
 
-            {/* Premium VIP Highlights Surface (#161616 surface) */}
+            {/* Premium Highlights Surface (#141414 surface) */}
             <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
-              <div className="bg-[#161616] rounded-md p-6 sm:p-10 grid grid-cols-1 md:grid-cols-3 gap-8 text-left border border-[#C5A059]/20 shadow-2xl">
+              <div className="bg-netflix-dark-grey rounded-md p-6 sm:p-10 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
                 <div className="flex items-start space-x-4">
-                  <div className="bg-[#C5A059]/20 text-[#C5A059] p-3 rounded-md shrink-0 border border-[#C5A059]/40">
-                    <Crown className="w-6 h-6 fill-[#C5A059]" />
+                  <div className="bg-netflix-red/20 text-netflix-red p-3 rounded-md shrink-0">
+                    <Zap className="w-6 h-6" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-extrabold text-base text-white font-serif">1-Tap VIP Concierge</h3>
-                    <p className="text-xs text-[#A0A0A0] leading-relaxed">
-                      Zero friction checkout. Direct 1-tap reservation for Royal Suites, Private Boxes, and F1 Paddock passes.
+                    <h3 className="font-extrabold text-base text-netflix-white">Instant QR Mobile Pass</h3>
+                    <p className="text-xs text-netflix-light-grey leading-relaxed">
+                      Zero physical tickets. Instant digital barcode delivery straight to your TickIt wallet.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-4">
-                  <div className="bg-[#C5A059]/20 text-[#C5A059] p-3 rounded-md shrink-0 border border-[#C5A059]/40">
+                  <div className="bg-netflix-red/20 text-netflix-red p-3 rounded-md shrink-0">
                     <ShieldCheck className="w-6 h-6" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-extrabold text-base text-white font-serif">Chauffeur & Helicopter Transit</h3>
-                    <p className="text-xs text-[#A0A0A0] leading-relaxed">
-                      Integrated door-to-door luxury Maybach fleet and private helicopter air charter booking.
+                    <h3 className="font-extrabold text-base text-netflix-white">Verified 100% Guarantee</h3>
+                    <p className="text-xs text-netflix-light-grey leading-relaxed">
+                      Every ticket is authenticated directly through official event organizers with buyer protection.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-4">
-                  <div className="bg-[#C5A059]/20 text-[#C5A059] p-3 rounded-md shrink-0 border border-[#C5A059]/40">
-                    <PhoneCall className="w-6 h-6" />
+                  <div className="bg-netflix-red/20 text-netflix-red p-3 rounded-md shrink-0">
+                    <Sparkles className="w-6 h-6" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-extrabold text-base text-white font-serif">24/7 Dedicated Butler Line</h3>
-                    <p className="text-xs text-[#A0A0A0] leading-relaxed">
-                      Direct phone access to your personal executive butler and venue concierge team worldwide.
+                    <h3 className="font-extrabold text-base text-netflix-white">Personalized Match Algorithm</h3>
+                    <p className="text-xs text-netflix-light-grey leading-relaxed">
+                      Curated recommendations tailored to your music taste, location, and past show attendance.
                     </p>
                   </div>
                 </div>
@@ -363,33 +370,33 @@ export function App() {
         )}
       </main>
 
-      {/* Footer Surface (#161616) */}
-      <footer className="bg-[#161616] border-t border-[#C5A059]/20 py-10 px-4 sm:px-6 lg:px-8 text-[#A0A0A0] text-xs">
+      {/* Footer Surface (#141414) */}
+      <footer className="bg-netflix-dark-grey border-t border-white/5 py-10 px-4 sm:px-6 lg:px-8 text-netflix-light-grey text-xs">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-white/5 pb-6">
-            <div className="flex items-center space-x-2.5">
-              <div className="bg-[#C5A059] text-[#0B0B0B] p-1.5 rounded-md">
-                <Crown className="w-4 h-4 fill-[#0B0B0B]" />
+            <div className="flex items-center space-x-2">
+              <div className="bg-netflix-red text-white p-1 rounded-md">
+                <Ticket className="w-4 h-4" />
               </div>
-              <span className="text-lg font-black tracking-tight text-white font-serif">
-                TICK<span className="text-[#C5A059]">IT</span> VIP CONCIERGE
+              <span className="text-lg font-black tracking-tight text-netflix-red">
+                TICK<span className="text-netflix-white">IT</span>
               </span>
-              <span className="text-xs text-[#A0A0A0] ml-2">
-                • Ultra-Luxury Event Ticketing Platform
+              <span className="text-xs text-netflix-light-grey ml-2">
+                • Cinematic Event Ticketing Platform
               </span>
             </div>
 
             <div className="flex flex-wrap gap-6 text-xs font-medium">
-              <a href="#" className="hover:text-[#C5A059] transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-[#C5A059] transition-colors">Terms of VIP Service</a>
-              <a href="#" className="hover:text-[#C5A059] transition-colors">24/7 Butler Desk</a>
-              <a href="#" className="hover:text-[#C5A059] transition-colors">Private Jet Charter</a>
+              <a href="#" className="hover:text-netflix-white transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-netflix-white transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-netflix-white transition-colors">Help & FAQ</a>
+              <a href="#" className="hover:text-netflix-white transition-colors">Corporate Tickets</a>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] text-[#A0A0A0]/70 gap-2">
-            <div>© 2026 TickIt VIP Inc. Timeless Classic Edition. All Rights Reserved.</div>
-            <div>Exact Hex Palette: #C5A059 (Champagne Gold) | #0B0B0B (Onyx Black) | #161616 (Surface Dark)</div>
+          <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] text-netflix-light-grey/70 gap-2">
+            <div>© 2026 TickIt Inc. Netflix Aesthetic Design System. All Rights Reserved.</div>
+            <div>Exact Hex Palette: #E50914 (Red) | #000000 (Black) | #141414 (Dark Grey) | #B3B3B3 (Light Grey)</div>
           </div>
         </div>
       </footer>
@@ -401,7 +408,7 @@ export function App() {
         onLoginSuccess={(user) => setCurrentUser(user)}
       />
 
-      {/* 1-Tap VIP Ticket Purchase Modal */}
+      {/* Express 1-Click Ticket Purchase & Seat Selection Wizard Modal */}
       <EventModal
         event={selectedEventModal}
         currentUser={currentUser}
