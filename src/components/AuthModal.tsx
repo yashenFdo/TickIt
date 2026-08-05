@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Ticket, ShieldCheck } from 'lucide-react';
+import { X, Crown, ShieldCheck } from 'lucide-react';
 
 export interface UserProfile {
   name: string;
@@ -48,27 +48,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-netflix-black/85 backdrop-blur-md animate-fadeIn">
-      {/* Modal Surface - Netflix Dark Grey (#141414) */}
-      <div className="relative w-full max-w-md bg-netflix-dark-grey text-netflix-white rounded-md overflow-hidden shadow-2xl border border-white/10 p-6 sm:p-8 space-y-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B0B0B]/90 backdrop-blur-md animate-fadeIn">
+      {/* Modal Surface - Deep Luxury Dark (#161616) */}
+      <div className="relative w-full max-w-md bg-[#161616] text-white rounded-md overflow-hidden shadow-2xl border border-[#C5A059]/30 p-6 sm:p-8 space-y-6">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full text-netflix-light-grey hover:text-white hover:bg-netflix-red transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full text-[#A0A0A0] hover:text-white hover:bg-[#C5A059] hover:text-[#0B0B0B] transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Logo & Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex bg-netflix-red text-white p-2.5 rounded-md shadow-md">
-            <Ticket className="w-7 h-7 fill-white" />
+          <div className="inline-flex bg-[#C5A059] text-[#0B0B0B] p-2.5 rounded-md shadow-lg">
+            <Crown className="w-7 h-7 fill-[#0B0B0B]" />
           </div>
-          <h2 className="text-2xl font-black text-netflix-white tracking-tight uppercase">
-            Sign In to <span className="text-netflix-red">TickIt</span>
+          <h2 className="text-2xl font-black text-white tracking-tight uppercase font-serif">
+            VIP Member <span className="text-[#C5A059]">Sign In</span>
           </h2>
-          <p className="text-xs text-netflix-light-grey max-w-xs mx-auto">
-            1-Click instant authentication for express event ticketing & mobile pass wallet.
+          <p className="text-xs text-[#A0A0A0] max-w-xs mx-auto">
+            Instant 1-Tap authentication for ultra-exclusive events & concierge pass management.
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
           {/* Sign in with Google */}
           <button
             onClick={() => handleSocialLogin('Google')}
-            className="w-full flex items-center justify-center space-x-3 bg-netflix-black hover:bg-white/10 text-white border border-white/15 py-3 rounded-md font-bold text-sm transition-all active:scale-95 cursor-pointer shadow-sm group"
+            className="w-full flex items-center justify-center space-x-3 bg-[#0B0B0B] hover:bg-white/10 text-white border border-white/15 py-3 rounded-md font-bold text-sm transition-all active:scale-95 cursor-pointer shadow-sm group"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -124,9 +124,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
         </div>
 
         {/* Security Assurance */}
-        <div className="pt-2 flex items-center justify-center space-x-2 text-[11px] text-netflix-light-grey text-center border-t border-white/10">
-          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>OAuth 2.0 Encryption • No Password Required</span>
+        <div className="pt-2 flex items-center justify-center space-x-2 text-[11px] text-[#A0A0A0] text-center border-t border-white/10">
+          <ShieldCheck className="w-4 h-4 text-[#C5A059] shrink-0" />
+          <span>OAuth 2.0 VIP Encryption • Instant Profile Sync</span>
         </div>
       </div>
     </div>
