@@ -57,10 +57,12 @@ export function App() {
     sortBy: 'match',
   });
 
+  const initialTicketEvent = Object.values(EVENTS_BY_CATEGORY)[0]?.[0] || FEATURED_EVENT;
+
   const [purchasedTickets, setPurchasedTickets] = useState<PurchasedTicket[]>([
     {
       id: 'TK-882194',
-      event: EVENTS_BY_CATEGORY['Trending Now'][0],
+      event: initialTicketEvent,
       tier: 'VIP Front Row (VIP-1-2)',
       quantity: 2,
       totalPrice: 190,
