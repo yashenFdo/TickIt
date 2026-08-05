@@ -131,7 +131,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
             {event.description}
           </p>
 
-          {/* Action Buttons - Strictly abiding by netflix-red & rounded-md rules */}
+          {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-3 pt-2">
             {/* Primary Express Ticket Button */}
             <button

@@ -163,7 +163,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
 
-          {/* My Tickets Button - netflix-red rounded-md (no pill!) */}
+          {/* My Tickets Button */}
           <button
             onClick={onOpenMyTickets}
             className="flex items-center space-x-2 bg-netflix-red hover:bg-netflix-red/90 text-netflix-white text-xs sm:text-sm font-semibold px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-md transition-transform duration-200 active:scale-95 shadow-sm cursor-pointer"
