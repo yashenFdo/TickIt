@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, Ticket, User, Menu, X } from 'lucide-react';
+import { Search, Bell, Ticket, User, Menu, X, Heart } from 'lucide-react';
 
 interface NavbarProps {
   onSearchChange?: (query: string) => void;
   selectedCategory: string;
   onSelectCategory: (category: string) => void;
   onOpenMyTickets: () => void;
+  bookmarkCount?: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -13,6 +14,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   selectedCategory,
   onSelectCategory,
   onOpenMyTickets,
+  bookmarkCount = 0,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,6 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navLinks = [
     { id: 'all', label: 'Home' },
+    { id: 'mylist', label: 'My List', count: bookmarkCount },
     { id: 'concerts', label: 'Concerts' },
     { id: 'comedy', label: 'Standup' },
     { id: 'sports', label: 'Sports' },
@@ -62,7 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Logo */}
           <button
             onClick={() => onSelectCategory('all')}
-            className="flex items-center space-x-2 group focus:outline-none"
+            className="flex items-center space-x-2 group focus:outline-none cursor-pointer"
           >
             <div className="bg-netflix-red text-white p-1.5 rounded-md flex items-center justify-center font-black tracking-tighter text-xl">
               <Ticket className="w-5 h-5 fill-white text-netflix-red" />
@@ -80,13 +83,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   key={link.id}
                   onClick={() => onSelectCategory(link.id)}
-                  className={`text-sm font-medium transition-colors duration-200 ${
+                  className={`text-sm font-medium transition-colors duration-200 flex items-center space-x-1 cursor-pointer ${
                     isActive
                       ? 'text-netflix-white font-bold border-b-2 border-netflix-red pb-1'
                       : 'text-netflix-light-grey hover:text-netflix-white'
                   }`}
                 >
-                  {link.label}
+                  {link.id === 'mylist' && <Heart className="w-3.5 h-3.5 fill-current text-netflix-red" />}
+                  <span>{link.label}</span>
+                  {link.count !== undefined && link.count > 0 && (
+                    <span className="bg-netflix-red text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+                      {link.count}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -149,7 +158,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* My Tickets Button - netflix-red rounded-md (no pill!) */}
           <button
             onClick={onOpenMyTickets}
-            className="flex items-center space-x-2 bg-netflix-red hover:bg-netflix-red/90 text-netflix-white text-xs sm:text-sm font-semibold px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-md transition-transform duration-200 active:scale-95 shadow-sm"
+            className="flex items-center space-x-2 bg-netflix-red hover:bg-netflix-red/90 text-netflix-white text-xs sm:text-sm font-semibold px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-md transition-transform duration-200 active:scale-95 shadow-sm cursor-pointer"
           >
             <Ticket className="w-4 h-4" />
             <span className="hidden xs:inline">My Tickets</span>
@@ -188,7 +197,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'text-netflix-light-grey hover:text-netflix-white hover:bg-white/5'
               }`}
             >
-              {link.label}
+              {link.label} {link.count !== undefined && link.count > 0 ? `(${link.count})` : ''}
             </button>
           ))}
         </div>

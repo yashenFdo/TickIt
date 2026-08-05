@@ -1,14 +1,25 @@
 import React from 'react';
-import { Ticket, Info, Calendar, MapPin, Sparkles, Flame, Clock } from 'lucide-react';
+import { Ticket, Info, Calendar, MapPin, Sparkles, Clock, Play, Heart } from 'lucide-react';
 import type { EventItem } from '../data/events';
+import { CountdownTicker } from './CountdownTicker';
 
 interface HeroBannerProps {
   event: EventItem;
+  isBookmarked?: boolean;
   onGetTickets: (event: EventItem) => void;
   onMoreInfo: (event: EventItem) => void;
+  onWatchTrailer?: (event: EventItem) => void;
+  onToggleBookmark?: (event: EventItem) => void;
 }
 
-export const HeroBanner: React.FC<HeroBannerProps> = ({ event, onGetTickets, onMoreInfo }) => {
+export const HeroBanner: React.FC<HeroBannerProps> = ({
+  event,
+  isBookmarked = false,
+  onGetTickets,
+  onMoreInfo,
+  onWatchTrailer,
+  onToggleBookmark,
+}) => {
   return (
     <div className="relative w-full h-[80vh] min-h-[540px] max-h-[750px] overflow-hidden bg-netflix-black select-none">
       {/* Background Image with Cinematic Gradient Masking */}
@@ -27,7 +38,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ event, onGetTickets, onM
       {/* Content Container */}
       <div className="relative z-20 max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-16 sm:pb-24">
         <div className="max-w-2xl space-y-4">
-          {/* Top Badges */}
+          {/* Top Badges & Live Countdown Ticker */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-semibold tracking-wider">
             {/* Netflix Match Percentage */}
             <span className="text-emerald-400 font-bold flex items-center gap-1">
@@ -47,11 +58,8 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ event, onGetTickets, onM
               {event.ageRating}
             </span>
 
-            {/* Tickets remaining indicator */}
-            <span className="bg-netflix-red/20 text-netflix-red border border-netflix-red/40 px-2.5 py-0.5 rounded-md text-[10px] flex items-center gap-1">
-              <Flame className="w-3 h-3 fill-netflix-red" />
-              Only {event.ticketsRemaining} Tickets Left!
-            </span>
+            {/* Countdown Ticker for Live Event */}
+            <CountdownTicker targetHours={3} />
           </div>
 
           {/* Title & Subtitle */}
@@ -88,7 +96,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ event, onGetTickets, onM
           </p>
 
           {/* Action Buttons - Strictly abiding by netflix-red & rounded-md rules */}
-          <div className="flex items-center space-x-4 pt-2">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             {/* Primary Ticket Button */}
             <button
               onClick={() => onGetTickets(event)}
@@ -97,6 +105,32 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ event, onGetTickets, onM
               <Ticket className="w-5 h-5 fill-white group-hover:rotate-12 transition-transform duration-200" />
               <span>Get Tickets ({event.price})</span>
             </button>
+
+            {/* Watch Trailer Button */}
+            {onWatchTrailer && (
+              <button
+                onClick={() => onWatchTrailer(event)}
+                className="flex items-center space-x-2 bg-netflix-white text-netflix-black hover:bg-netflix-white/90 text-sm sm:text-base font-bold px-5 py-3 rounded-md transition-all duration-200 active:scale-95 cursor-pointer shadow-md"
+              >
+                <Play className="w-5 h-5 fill-netflix-black" />
+                <span>Trailer</span>
+              </button>
+            )}
+
+            {/* Bookmark Heart Button */}
+            {onToggleBookmark && (
+              <button
+                onClick={() => onToggleBookmark(event)}
+                className={`p-3 rounded-md transition-all active:scale-95 cursor-pointer border ${
+                  isBookmarked
+                    ? 'bg-netflix-red text-white border-netflix-red'
+                    : 'bg-netflix-dark-grey/90 text-netflix-light-grey hover:text-white border-white/20'
+                }`}
+                title={isBookmarked ? 'Saved in My List' : 'Add to My List'}
+              >
+                <Heart className={`w-5 h-5 ${isBookmarked ? 'fill-white' : ''}`} />
+              </button>
+            )}
 
             {/* Secondary Details Button */}
             <button

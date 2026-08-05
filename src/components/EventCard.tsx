@@ -1,14 +1,24 @@
 import React from 'react';
-import { Calendar, MapPin, Ticket, Sparkles, Star } from 'lucide-react';
+import { Calendar, MapPin, Ticket, Sparkles, Star, Heart, Play } from 'lucide-react';
 import type { EventItem } from '../data/events';
 
 interface EventCardProps {
   event: EventItem;
+  isBookmarked?: boolean;
   onSelect: (event: EventItem) => void;
   onBuyTickets: (event: EventItem) => void;
+  onToggleBookmark?: (event: EventItem) => void;
+  onWatchTrailer?: (event: EventItem) => void;
 }
 
-export const EventCard: React.FC<EventCardProps> = ({ event, onSelect, onBuyTickets }) => {
+export const EventCard: React.FC<EventCardProps> = ({
+  event,
+  isBookmarked = false,
+  onSelect,
+  onBuyTickets,
+  onToggleBookmark,
+  onWatchTrailer,
+}) => {
   return (
     <div
       onClick={() => onSelect(event)}
@@ -40,11 +50,47 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onSelect, onBuyTick
           ) : null}
         </div>
 
-        {/* Rating Badge Top Right */}
-        <div className="absolute top-2 right-2 bg-netflix-black/80 backdrop-blur-sm text-netflix-white text-[11px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1">
-          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-          <span>{event.rating.replace(' ★', '')}</span>
+        {/* Bookmark Heart Button & Rating */}
+        <div className="absolute top-2 right-2 flex items-center space-x-1.5 z-10">
+          {onToggleBookmark && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleBookmark(event);
+              }}
+              className={`p-1.5 rounded-md backdrop-blur-md transition-all ${
+                isBookmarked
+                  ? 'bg-netflix-red text-white'
+                  : 'bg-netflix-black/70 text-netflix-light-grey hover:text-white'
+              }`}
+              title={isBookmarked ? 'Remove from My List' : 'Add to My List'}
+            >
+              <Heart className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-white' : ''}`} />
+            </button>
+          )}
+
+          <div className="bg-netflix-black/80 backdrop-blur-sm text-netflix-white text-[11px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1">
+            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+            <span>{event.rating.replace(' ★', '')}</span>
+          </div>
         </div>
+
+        {/* Hover Trailer Play Button */}
+        {onWatchTrailer && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onWatchTrailer(event);
+            }}
+            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"
+          >
+            <div className="w-10 h-10 bg-netflix-red/90 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+              <Play className="w-5 h-5 fill-white ml-0.5" />
+            </div>
+          </button>
+        )}
       </div>
 
       {/* Card Content - Flat Cinematic Aesthetic (#141414 background) */}

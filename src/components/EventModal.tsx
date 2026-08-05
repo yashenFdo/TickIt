@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, MapPin, Ticket, ShieldCheck, CheckCircle2, Sparkles, CreditCard, Lock, Smartphone, ChevronRight, ChevronLeft } from 'lucide-react';
+import { X, Calendar, MapPin, Ticket, ShieldCheck, CheckCircle2, Sparkles, CreditCard, Lock, Smartphone, ChevronRight, ChevronLeft, Star, ThumbsUp, MessageSquare } from 'lucide-react';
 import type { EventItem } from '../data/events';
 import { SeatPicker } from './SeatPicker';
 import type { SelectedSeat } from './SeatPicker';
@@ -21,6 +21,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
   if (!event) return null;
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [activeTab, setActiveTab] = useState<'booking' | 'reviews'>('booking');
   const [selectedSeats, setSelectedSeats] = useState<SelectedSeat[]>([]);
   const [selectedTier, setSelectedTier] = useState<'standard' | 'vip' | 'backstage'>('standard');
   const [quantity, setQuantity] = useState(1);
@@ -31,6 +32,47 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
   const [customerEmail, setCustomerEmail] = useState('alex.morgan@netflix-tickit.com');
   const [customerPhone, setCustomerPhone] = useState('+1 (555) 382-9102');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'applepay' | 'googlepay' | 'crypto'>('card');
+
+  // Reviews State
+  const [reviewsList, setReviewsList] = useState([
+    {
+      id: 'rev-1',
+      author: 'Marcus Vance',
+      rating: 5,
+      date: '2 days ago',
+      comment: 'Mind-blowing production! The spatial audio and laser lighting were truly cinematic. Worth every dollar!',
+      likes: 34,
+      isVerified: true,
+    },
+    {
+      id: 'rev-2',
+      author: 'Elena Rostova',
+      rating: 5,
+      date: '1 week ago',
+      comment: 'Front row VIP seats gave an unmatched view of the stage. The mobile entry pass worked seamlessly at the gate.',
+      likes: 21,
+      isVerified: true,
+    },
+  ]);
+  const [newComment, setNewComment] = useState('');
+
+  const handleAddReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    setReviewsList([
+      {
+        id: `rev-${Date.now()}`,
+        author: customerName || 'Verified Attendee',
+        rating: 5,
+        date: 'Just now',
+        comment: newComment,
+        likes: 1,
+        isVerified: true,
+      },
+      ...reviewsList,
+    ]);
+    setNewComment('');
+  };
 
   const basePriceNumber = parseInt(event.price.replace(/[^0-9]/g, '')) || 95;
 
@@ -58,7 +100,6 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
   const currentTierObj = tiers.find((t) => t.id === selectedTier) || tiers[0];
   const unitPrice = Math.round(basePriceNumber * currentTierObj.multiplier);
 
-  // Total price calculation depending on booking mode
   const totalPrice =
     bookingMode === 'seats' && selectedSeats.length > 0
       ? selectedSeats.reduce((sum, s) => sum + s.price, 0)
@@ -95,21 +136,35 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
           <X className="w-5 h-5" />
         </button>
 
-        {/* Wizard Steps Header Indicator */}
+        {/* Header Tab Switcher (Ticket Booking vs Fan Reviews) */}
         <div className="bg-netflix-black/90 px-6 py-3 border-b border-white/10 flex items-center justify-between text-xs font-semibold">
-          <div className="flex items-center space-x-2 text-netflix-white">
-            <span className="bg-netflix-red text-white w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px]">
-              {step}
-            </span>
-            <span className="uppercase tracking-wider text-[11px] font-bold">
-              {step === 1 && '1. Choose Seats / Tier'}
-              {step === 2 && '2. Customer Details'}
-              {step === 3 && '3. Secure Payment'}
-              {step === 4 && '4. Order Confirmation'}
-            </span>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setActiveTab('booking')}
+              className={`flex items-center space-x-1.5 py-1 transition-colors cursor-pointer ${
+                activeTab === 'booking'
+                  ? 'text-netflix-white font-extrabold border-b-2 border-netflix-red'
+                  : 'text-netflix-light-grey hover:text-white'
+              }`}
+            >
+              <Ticket className="w-4 h-4 text-netflix-red" />
+              <span className="uppercase text-[11px]">Ticket Booking Wizard</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`flex items-center space-x-1.5 py-1 transition-colors cursor-pointer ${
+                activeTab === 'reviews'
+                  ? 'text-netflix-white font-extrabold border-b-2 border-netflix-red'
+                  : 'text-netflix-light-grey hover:text-white'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4 text-netflix-red" />
+              <span className="uppercase text-[11px]">Fan Reviews ({reviewsList.length})</span>
+            </button>
           </div>
 
-          {step < 4 && (
+          {activeTab === 'booking' && step < 4 && (
             <div className="hidden sm:flex items-center space-x-1 text-[11px] text-netflix-light-grey">
               <span className={step >= 1 ? 'text-netflix-red font-bold' : ''}>Seats</span>
               <ChevronRight className="w-3 h-3 text-netflix-light-grey" />
@@ -120,8 +175,79 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
           )}
         </div>
 
-        {/* Step 4: Final Confirmation Screen */}
-        {step === 4 ? (
+        {/* Fan Reviews Tab Content */}
+        {activeTab === 'reviews' ? (
+          <div className="p-6 sm:p-8 space-y-6">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div>
+                <h3 className="text-xl font-bold text-netflix-white">Verified Fan Reviews</h3>
+                <p className="text-xs text-netflix-light-grey">
+                  Community feedback from verified ticket buyers for {event.title}
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-1 bg-netflix-black px-3 py-1.5 rounded-md border border-white/10">
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                <span className="font-extrabold text-sm text-white">{event.rating}</span>
+              </div>
+            </div>
+
+            {/* Add Review Form */}
+            <form onSubmit={handleAddReview} className="space-y-2 bg-netflix-black p-4 rounded-md border border-white/5">
+              <label className="text-xs font-semibold text-netflix-white">Write a Review</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Share your experience with other fans..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="flex-1 bg-netflix-dark-grey text-netflix-white text-xs p-2.5 rounded-md border border-white/10 focus:border-netflix-red focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="bg-netflix-red hover:bg-netflix-red/90 text-white font-bold text-xs px-4 rounded-md transition-colors"
+                >
+                  Post
+                </button>
+              </div>
+            </form>
+
+            {/* Reviews List */}
+            <div className="space-y-3">
+              {reviewsList.map((rev) => (
+                <div key={rev.id} className="bg-netflix-black p-4 rounded-md border border-white/5 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-netflix-white">{rev.author}</span>
+                      {rev.isVerified && (
+                        <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] px-1.5 py-0.2 rounded font-semibold flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3" /> Verified Attendee
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-netflix-light-grey">{rev.date}</span>
+                  </div>
+
+                  <div className="flex items-center space-x-1 text-amber-400">
+                    {Array.from({ length: rev.rating }).map((_, i) => (
+                      <Star key={i} className="w-3 h-3 fill-amber-400" />
+                    ))}
+                  </div>
+
+                  <p className="text-netflix-light-grey leading-relaxed">{rev.comment}</p>
+
+                  <div className="flex items-center space-x-1 text-[11px] text-netflix-light-grey pt-1">
+                    <button className="flex items-center space-x-1 hover:text-netflix-red">
+                      <ThumbsUp className="w-3 h-3" />
+                      <span>{rev.likes} Helpfulness</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : step === 4 ? (
+          /* Final Confirmation Screen */
           <div className="p-8 sm:p-12 text-center space-y-6 animate-fadeIn">
             <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40">
               <CheckCircle2 className="w-10 h-10 animate-bounce" />
@@ -217,7 +343,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
                     <button
                       type="button"
                       onClick={() => setBookingMode('seats')}
-                      className={`flex-1 py-2 text-center rounded-md transition-colors ${
+                      className={`flex-1 py-2 text-center rounded-md transition-colors cursor-pointer ${
                         bookingMode === 'seats'
                           ? 'bg-netflix-red text-white'
                           : 'text-netflix-light-grey hover:text-white'
@@ -228,7 +354,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
                     <button
                       type="button"
                       onClick={() => setBookingMode('tier')}
-                      className={`flex-1 py-2 text-center rounded-md transition-colors ${
+                      className={`flex-1 py-2 text-center rounded-md transition-colors cursor-pointer ${
                         bookingMode === 'tier'
                           ? 'bg-netflix-red text-white'
                           : 'text-netflix-light-grey hover:text-white'
@@ -396,7 +522,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onConfir
                   <button
                     type="button"
                     onClick={() => setStep((step - 1) as any)}
-                    className="flex items-center space-x-1 bg-netflix-black hover:bg-netflix-black/80 text-netflix-light-grey hover:text-white px-4 py-2.5 rounded-md text-xs font-bold transition-colors"
+                    className="flex items-center space-x-1 bg-netflix-black hover:bg-netflix-black/80 text-netflix-light-grey hover:text-white px-4 py-2.5 rounded-md text-xs font-bold transition-colors cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     <span>Back</span>

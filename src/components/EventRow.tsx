@@ -6,15 +6,21 @@ import { EventCard } from './EventCard';
 interface EventRowProps {
   title: string;
   events: EventItem[];
+  bookmarkedIds?: Set<string>;
   onSelectEvent: (event: EventItem) => void;
   onBuyTickets: (event: EventItem) => void;
+  onToggleBookmark?: (event: EventItem) => void;
+  onWatchTrailer?: (event: EventItem) => void;
 }
 
 export const EventRow: React.FC<EventRowProps> = ({
   title,
   events,
+  bookmarkedIds = new Set(),
   onSelectEvent,
   onBuyTickets,
+  onToggleBookmark,
+  onWatchTrailer,
 }) => {
   const rowRef = useRef<HTMLDivElement>(null);
 
@@ -62,8 +68,11 @@ export const EventRow: React.FC<EventRowProps> = ({
             <EventCard
               key={event.id}
               event={event}
+              isBookmarked={bookmarkedIds.has(event.id)}
               onSelect={onSelectEvent}
               onBuyTickets={onBuyTickets}
+              onToggleBookmark={onToggleBookmark}
+              onWatchTrailer={onWatchTrailer}
             />
           ))}
         </div>

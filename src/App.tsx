@@ -4,6 +4,7 @@ import { HeroBanner } from './components/HeroBanner';
 import { EventRow } from './components/EventRow';
 import { EventCard } from './components/EventCard';
 import { EventModal } from './components/EventModal';
+import { TrailerModal } from './components/TrailerModal';
 import { MyTicketsDrawer } from './components/MyTicketsDrawer';
 import type { PurchasedTicket } from './components/MyTicketsDrawer';
 import { FilterBar } from './components/FilterBar';
@@ -11,13 +12,31 @@ import type { FilterState } from './components/FilterBar';
 import { FEATURED_EVENT, EVENTS_BY_CATEGORY, EVENT_CATEGORIES } from './data/events';
 import type { EventItem } from './data/events';
 import type { SelectedSeat } from './components/SeatPicker';
-import { Sparkles, Film, Ticket, ShieldCheck, Zap } from 'lucide-react';
+import { Sparkles, Film, Ticket, ShieldCheck, Zap, Heart } from 'lucide-react';
 
 export function App() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedEventModal, setSelectedEventModal] = useState<EventItem | null>(null);
+  const [trailerEventModal, setTrailerEventModal] = useState<EventItem | null>(null);
   const [isTicketsDrawerOpen, setIsTicketsDrawerOpen] = useState<boolean>(false);
+
+  // Bookmarking / Favorites State
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(
+    new Set(['feat-1', 'tr-1', 'rec-1'])
+  );
+
+  const handleToggleBookmark = (event: EventItem) => {
+    setBookmarkedIds((prev) => {
+      const updated = new Set(prev);
+      if (updated.has(event.id)) {
+        updated.delete(event.id);
+      } else {
+        updated.add(event.id);
+      }
+      return updated;
+    });
+  };
 
   // Filter State
   const [filters, setFilters] = useState<FilterState>({
@@ -57,7 +76,9 @@ export function App() {
     let result = [...allEventsList];
 
     // Category filter
-    if (selectedCategory !== 'all') {
+    if (selectedCategory === 'mylist') {
+      result = result.filter((e) => bookmarkedIds.has(e.id));
+    } else if (selectedCategory !== 'all') {
       const catObj = EVENT_CATEGORIES.find((c) => c.id === selectedCategory);
       if (catObj) {
         result = result.filter((e) =>
@@ -116,7 +137,7 @@ export function App() {
     });
 
     return result;
-  }, [allEventsList, selectedCategory, searchQuery, filters]);
+  }, [allEventsList, selectedCategory, searchQuery, filters, bookmarkedIds]);
 
   const handleConfirmPurchase = (ticketInfo: {
     event: EventItem;
@@ -161,11 +182,12 @@ export function App() {
         }}
         onSearchChange={(q) => setSearchQuery(q)}
         onOpenMyTickets={() => setIsTicketsDrawerOpen(true)}
+        bookmarkCount={bookmarkedIds.size}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 pb-16">
-        {/* If Active Filter or Search */}
+        {/* If Active Filter, Search, or My List View */}
         {isFiltered ? (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 space-y-6">
             {/* Filter Controls Bar */}
@@ -186,11 +208,16 @@ export function App() {
 
             <div className="flex items-center justify-between border-b border-netflix-light-grey/10 pb-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-netflix-white tracking-tight">
-                  {searchQuery ? `Search Results for "${searchQuery}"` : `Explore Live Events`}
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-netflix-white tracking-tight flex items-center gap-2">
+                  {selectedCategory === 'mylist' && <Heart className="w-6 h-6 fill-netflix-red text-netflix-red" />}
+                  {selectedCategory === 'mylist'
+                    ? 'My Saved List & Bookmarked Events'
+                    : searchQuery
+                    ? `Search Results for "${searchQuery}"`
+                    : `Explore Live Events`}
                 </h1>
                 <p className="text-xs text-netflix-light-grey mt-1">
-                  Showing {filteredEvents.length} events tailored to your filter selection
+                  Showing {filteredEvents.length} events matching your selection
                 </p>
               </div>
 
@@ -214,9 +241,13 @@ export function App() {
             {filteredEvents.length === 0 ? (
               <div className="text-center py-20 bg-netflix-dark-grey rounded-md space-y-3">
                 <Film className="w-12 h-12 text-netflix-light-grey/40 mx-auto" />
-                <h2 className="text-lg font-bold text-netflix-white">No Matching Events Found</h2>
-                <p className="text-xs text-netflix-light-grey">
-                  Try adjusting your price range slider or clearing city filters.
+                <h2 className="text-lg font-bold text-netflix-white">
+                  {selectedCategory === 'mylist' ? 'Your Saved List is Empty' : 'No Matching Events Found'}
+                </h2>
+                <p className="text-xs text-netflix-light-grey max-w-xs mx-auto">
+                  {selectedCategory === 'mylist'
+                    ? 'Click the heart icon on any event card to save shows and concerts to your list!'
+                    : 'Try adjusting your price range slider or clearing city filters.'}
                 </p>
               </div>
             ) : (
@@ -225,8 +256,11 @@ export function App() {
                   <div key={event.id} className="flex justify-center">
                     <EventCard
                       event={event}
+                      isBookmarked={bookmarkedIds.has(event.id)}
                       onSelect={(e) => setSelectedEventModal(e)}
                       onBuyTickets={(e) => setSelectedEventModal(e)}
+                      onToggleBookmark={handleToggleBookmark}
+                      onWatchTrailer={(e) => setTrailerEventModal(e)}
                     />
                   </div>
                 ))}
@@ -239,11 +273,14 @@ export function App() {
             {/* Featured Billboard Hero */}
             <HeroBanner
               event={FEATURED_EVENT}
+              isBookmarked={bookmarkedIds.has(FEATURED_EVENT.id)}
               onGetTickets={(e) => setSelectedEventModal(e)}
               onMoreInfo={(e) => setSelectedEventModal(e)}
+              onWatchTrailer={(e) => setTrailerEventModal(e)}
+              onToggleBookmark={handleToggleBookmark}
             />
 
-            {/* Filter Bar in Container */}
+            {/* Filter Bar Container */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 relative z-30">
               <FilterBar
                 filters={filters}
@@ -266,8 +303,11 @@ export function App() {
                   key={categoryTitle}
                   title={categoryTitle}
                   events={eventsList}
+                  bookmarkedIds={bookmarkedIds}
                   onSelectEvent={(e) => setSelectedEventModal(e)}
                   onBuyTickets={(e) => setSelectedEventModal(e)}
+                  onToggleBookmark={handleToggleBookmark}
+                  onWatchTrailer={(e) => setTrailerEventModal(e)}
                 />
               ))}
             </div>
@@ -352,6 +392,13 @@ export function App() {
         event={selectedEventModal}
         onClose={() => setSelectedEventModal(null)}
         onConfirmPurchase={handleConfirmPurchase}
+      />
+
+      {/* Event Trailer Teaser Player Modal */}
+      <TrailerModal
+        event={trailerEventModal}
+        onClose={() => setTrailerEventModal(null)}
+        onGetTickets={(e) => setSelectedEventModal(e)}
       />
 
       {/* My Tickets Drawer */}
