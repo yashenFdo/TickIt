@@ -8,6 +8,7 @@ interface NavbarProps {
   onSelectCategory: (category: string) => void;
   onOpenMyTickets: () => void;
   onOpenAuthModal: () => void;
+  onOpenSettings: () => void;
   currentUser: UserProfile | null;
   onLogout: () => void;
   bookmarkCount?: number;
@@ -20,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectCategory,
   onOpenMyTickets,
   onOpenAuthModal,
+  onOpenSettings,
   currentUser,
   onLogout,
   bookmarkCount = 0,
@@ -252,6 +254,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <span className="mt-1.5 inline-block text-[10px] bg-netflix-red/20 text-netflix-red border border-netflix-red/30 px-1.5 py-0.5 rounded font-semibold">
                       via {currentUser.provider}
                     </span>
+                  </div>
+                  <div className="py-1 border-b border-white/10">
+                    <button
+                      onClick={() => { onOpenSettings(); setShowUserDropdown(false); }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-netflix-light-grey hover:text-white hover:bg-white/5 transition-colors"
+                    >
+                      Account Settings
+                    </button>
                   </div>
                   <button
                     onClick={() => { onLogout(); setShowUserDropdown(false); }}

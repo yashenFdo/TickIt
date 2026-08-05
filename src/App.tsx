@@ -7,6 +7,7 @@ import { EventModal } from './components/EventModal';
 import { TrailerModal } from './components/TrailerModal';
 import { AuthModal } from './components/AuthModal';
 import type { UserProfile } from './components/AuthModal';
+import { AccountSettingsModal } from './components/AccountSettingsModal';
 import { MyTicketsDrawer } from './components/MyTicketsDrawer';
 import type { PurchasedTicket } from './components/MyTicketsDrawer';
 import { FilterBar } from './components/FilterBar';
@@ -24,6 +25,7 @@ export function App() {
   const [trailerEventModal, setTrailerEventModal] = useState<EventItem | null>(null);
   const [isTicketsDrawerOpen, setIsTicketsDrawerOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
 
   const [currentUser, setCurrentUser] = useState<UserProfile | null>({
     name: 'Yashen Fernando',
@@ -156,6 +158,7 @@ export function App() {
         onSearchChange={setSearchQuery}
         onOpenMyTickets={() => setIsTicketsDrawerOpen(true)}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenSettings={() => setIsSettingsModalOpen(true)}
         currentUser={currentUser}
         onLogout={() => setCurrentUser(null)}
         bookmarkCount={bookmarkedIds.size}
@@ -423,10 +426,39 @@ export function App() {
       </footer>
 
       {/* Modals & Drawers */}
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} onLoginSuccess={setCurrentUser} />
-      <EventModal event={selectedEventModal} currentUser={currentUser} onOpenAuthModal={() => setIsAuthModalOpen(true)} onClose={() => setSelectedEventModal(null)} onConfirmPurchase={handleConfirmPurchase} />
-      <TrailerModal event={trailerEventModal} onClose={() => setTrailerEventModal(null)} onGetTickets={setSelectedEventModal} />
-      <MyTicketsDrawer isOpen={isTicketsDrawerOpen} onClose={() => setIsTicketsDrawerOpen(false)} tickets={purchasedTickets} onRemoveTicket={handleRemoveTicket} />
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={setCurrentUser}
+      />
+
+      {currentUser && (
+        <AccountSettingsModal
+          isOpen={isSettingsModalOpen}
+          currentUser={currentUser}
+          onClose={() => setIsSettingsModalOpen(false)}
+          onUpdateUser={setCurrentUser}
+        />
+      )}
+
+      <EventModal
+        event={selectedEventModal}
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onClose={() => setSelectedEventModal(null)}
+        onConfirmPurchase={handleConfirmPurchase}
+      />
+      <TrailerModal
+        event={trailerEventModal}
+        onClose={() => setTrailerEventModal(null)}
+        onGetTickets={setSelectedEventModal}
+      />
+      <MyTicketsDrawer
+        isOpen={isTicketsDrawerOpen}
+        onClose={() => setIsTicketsDrawerOpen(false)}
+        tickets={purchasedTickets}
+        onRemoveTicket={handleRemoveTicket}
+      />
     </div>
   );
 }

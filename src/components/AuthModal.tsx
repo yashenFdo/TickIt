@@ -19,7 +19,7 @@ interface AuthModalProps {
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
   if (!isOpen) return null;
 
-  const [mode, setMode] = useState<'signin' | 'signup'>('signup');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signup');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [nic, setNic] = useState('');
@@ -27,8 +27,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email && !mobile) {
+    if (!email && !mobile && mode !== 'forgot') {
       alert('Please enter your email or mobile number.');
+      return;
+    }
+
+    if (mode === 'forgot') {
+      if (!email) {
+        alert('Please enter your email address to reset your password.');
+        return;
+      }
+      alert(`Password reset link sent to ${email}`);
+      setMode('signin');
       return;
     }
 
@@ -102,10 +112,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
               </span>
             </div>
             <h2 className="text-2xl font-black text-white tracking-tight">
-              {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
+              {mode === 'signin' ? 'Welcome Back' : mode === 'signup' ? 'Create Account' : 'Reset Password'}
             </h2>
             <p className="text-xs text-white/50">
-              {mode === 'signin' ? 'Sign in to access your tickets and saved events.' : 'Join to discover and book the best events in your city.'}
+              {mode === 'signin' ? 'Sign in to access your tickets and saved events.' 
+                : mode === 'signup' ? 'Join to discover and book the best events in your city.'
+                : 'Enter your email address and we will send you a link to reset your password.'}
             </p>
           </div>
 
@@ -143,20 +155,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-white/50 uppercase tracking-widest pl-1">Mobile Number</label>
-              <div className="relative">
-                <Phone className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="tel"
-                  required
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
-                  placeholder="+1 (555) 000-0000"
-                  className="w-full bg-black/50 text-white text-sm pl-9 pr-3 py-3 rounded border border-white/10 focus:border-netflix-red focus:outline-none transition-colors"
-                />
+            {mode !== 'forgot' && (
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-white/50 uppercase tracking-widest pl-1">Mobile Number</label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    required
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    placeholder="+1 (555) 000-0000"
+                    className="w-full bg-black/50 text-white text-sm pl-9 pr-3 py-3 rounded border border-white/10 focus:border-netflix-red focus:outline-none transition-colors"
+                  />
+                </div>
               </div>
-            </div>
+            )}
+
+            {mode === 'signin' && (
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => setMode('forgot')}
+                  className="text-xs font-semibold text-netflix-red hover:text-white transition-colors"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
 
             {mode === 'signup' && (
               <div className="space-y-1">
@@ -181,20 +207,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
               type="submit"
               className="w-full flex items-center justify-center gap-2 bg-netflix-red hover:bg-red-700 text-white font-extrabold text-sm py-3.5 rounded transition-all active:scale-[0.98] mt-2"
             >
-              {mode === 'signin' ? 'Sign In' : 'Create Account'}
+              {mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
               <ChevronRight className="w-4 h-4" />
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="text-xs text-white/30 font-medium uppercase tracking-widest">Or continue with</span>
-            <div className="flex-1 h-px bg-white/10" />
-          </div>
+          {mode !== 'forgot' && (
+            <>
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-xs text-white/30 font-medium uppercase tracking-widest">Or continue with</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
 
-          {/* Social Logins */}
-          <div className="grid grid-cols-3 gap-2">
+              {/* Social Logins */}
+              <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => handleSocialLogin('Google')}
               className="flex items-center justify-center py-2.5 bg-black/50 border border-white/10 hover:border-white/30 rounded transition-colors"
@@ -223,18 +251,41 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSu
               </svg>
             </button>
           </div>
+            </>
+          )}
         </div>
 
         {/* Footer Switcher */}
         <div className="bg-black/50 p-4 text-center border-t border-white/10">
           <p className="text-xs text-white/60">
-            {mode === 'signin' ? "Don't have an account?" : "Already have an account?"}{' '}
-            <button
-              onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-              className="text-white font-bold hover:text-netflix-red transition-colors"
-            >
-              {mode === 'signin' ? 'Sign up now.' : 'Sign in instead.'}
-            </button>
+            {mode === 'forgot' ? (
+              <button
+                onClick={() => setMode('signin')}
+                className="text-white font-bold hover:text-netflix-red transition-colors"
+              >
+                Back to Sign In
+              </button>
+            ) : mode === 'signin' ? (
+              <>
+                Don't have an account?{' '}
+                <button
+                  onClick={() => setMode('signup')}
+                  className="text-white font-bold hover:text-netflix-red transition-colors"
+                >
+                  Sign up now.
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{' '}
+                <button
+                  onClick={() => setMode('signin')}
+                  className="text-white font-bold hover:text-netflix-red transition-colors"
+                >
+                  Sign in instead.
+                </button>
+              </>
+            )}
           </p>
         </div>
       </div>
