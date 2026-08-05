@@ -11,6 +11,7 @@ import { MyTicketsDrawer } from './components/MyTicketsDrawer';
 import type { PurchasedTicket } from './components/MyTicketsDrawer';
 import { FilterBar } from './components/FilterBar';
 import type { FilterState } from './components/FilterBar';
+import { HomeFeed } from './components/HomeFeed';
 import { FEATURED_EVENT, EVENTS_BY_CATEGORY, EVENT_CATEGORIES } from './data/events';
 import type { EventItem } from './data/events';
 import type { SelectedSeat } from './components/SeatPicker';
@@ -233,8 +234,18 @@ export function App() {
               />
             </div>
 
-            {/* Event rows */}
-            <div className="relative z-30 mt-3 space-y-2 pb-4">
+            {/* ── Modern Home Feed Sections ── */}
+            <div className="relative z-30 mt-8">
+              <HomeFeed
+                bookmarkedIds={bookmarkedIds}
+                onSelectEvent={setSelectedEventModal}
+                onToggleBookmark={handleToggleBookmark}
+                onWatchTrailer={setTrailerEventModal}
+              />
+            </div>
+
+            {/* ── Category Carousels ── */}
+            <div className="relative z-30 mt-6 space-y-1 pb-4">
               {Object.entries(EVENTS_BY_CATEGORY).map(([cat, list]) => (
                 <EventRow
                   key={cat}
